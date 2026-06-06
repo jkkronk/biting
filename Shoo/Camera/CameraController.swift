@@ -7,7 +7,8 @@ import ImageIO
 ///
 /// All AVFoundation work happens on a private serial `sessionQueue`; lifecycle/auth/
 /// device transitions are reported through ``FrameSource/onStateChange`` on the main
-/// actor. The consumer (the detector, via ``AppState``) handles downscaling.
+/// actor. Frames are **downscaled into an owned buffer on `sessionQueue`** before being
+/// handed off, so consumers on other queues never touch the capture-owned surface.
 ///
 /// The session runs **iff** `isWatching` && authorized && no active pause reasons —
 /// see ``shouldBeRunning``. This keeps the green camera indicator on only while we
@@ -41,6 +42,10 @@ final class CameraController: NSObject, FrameSource {
     /// the rest — a backstop in case the device delivers above the requested cap. Touched
     /// only on `sessionQueue` (where frames arrive).
     private let frameThrottle = FrameThrottle(targetFPS: 12)
+
+    /// Shrinks each accepted frame into a pool-owned buffer on `sessionQueue` before hand-off,
+    /// so the capture-owned source surface is never read after the delegate returns.
+    private let downscaler = FrameDownscaler()
 
     /// Bounded auto-restart bookkeeping for transient runtime errors.
     private var restartAttempts = 0
@@ -364,7 +369,10 @@ extension CameraController: AVCaptureVideoDataOutputSampleBufferDelegate {
         // Drop frames above our processing cap before doing any work.
         guard frameThrottle.shouldProcess() else { return }
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        onFrame?(pixelBuffer, Self.orientation(for: connection))
+        // Downscale into an owned buffer NOW, on this (session) queue, while the capture
+        // surface is still valid — the consumer processes it asynchronously on another queue.
+        let owned = downscaler.downscale(pixelBuffer)
+        onFrame?(owned, Self.orientation(for: connection))
     }
 
     /// Derive the `CGImagePropertyOrientation` Vision should use for this connection.

@@ -35,9 +35,9 @@ final class HandFaceDetectorTests: XCTestCase {
 
     func testSustainedMouthContactEmitsContact() {
         let analyzer = MockFrameAnalyzer(observation: mouthContactObservation())
-        // No real downscale needed; the mock ignores the buffer.
+        // The mock ignores the buffer; frames arrive pre-downscaled in production.
         let detector = HandFaceDetector(
-            analyzer: analyzer, downscaler: FrameDownscaler(),
+            analyzer: analyzer,
             config: DetectorConfig.from(sensitivity: 0.5))
 
         var last: DetectionResult = .none
@@ -56,7 +56,7 @@ final class HandFaceDetectorTests: XCTestCase {
 
     func testNoFaceEmitsNone() {
         let analyzer = MockFrameAnalyzer(observation: FrameObservation(face: nil, hands: []))
-        let detector = HandFaceDetector(analyzer: analyzer, downscaler: FrameDownscaler())
+        let detector = HandFaceDetector(analyzer: analyzer)
 
         var last: DetectionResult = .mouthContact(confidence: 1.0)
         for _ in 0..<5 {
@@ -72,7 +72,7 @@ final class HandFaceDetectorTests: XCTestCase {
 
     func testResetClearsTemporalState() {
         let analyzer = MockFrameAnalyzer(observation: mouthContactObservation())
-        let detector = HandFaceDetector(analyzer: analyzer, downscaler: FrameDownscaler())
+        let detector = HandFaceDetector(analyzer: analyzer)
 
         for _ in 0..<10 {
             let exp = expectation(description: "frame")

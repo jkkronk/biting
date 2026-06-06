@@ -2,17 +2,17 @@ import CoreVideo
 import Foundation
 import ImageIO
 
-/// Coordinates the detection pipeline on a serial queue: downscale → analyze (Vision) →
-/// per-frame score (``ProximityAnalyzer`` over ``FaceGeometry``) → temporal model
-/// (``GestureDetector``) → ``DetectionResult``.
+/// Coordinates the detection pipeline on a serial queue: analyze (Vision) → per-frame score
+/// (``ProximityAnalyzer`` over ``FaceGeometry``) → temporal model (``GestureDetector``) →
+/// ``DetectionResult``.
 ///
-/// The pure logic lives in injectable pieces (`FrameAnalyzing`, `ProximityAnalyzer`,
-/// `GestureDetector`), so this type is just the threading + coalescing glue. All detector
-/// state (`gesture`, `config`) is touched **only** on `detectionQueue`; config swaps hop
-/// onto that queue so nothing is mutated cross-thread.
+/// Frames arrive **already downscaled and owned** (the capture layer runs ``FrameDownscaler``
+/// synchronously on the capture queue, where the source buffer is valid). This type is just
+/// the threading + coalescing glue. All detector state (`gesture`, `config`) is touched
+/// **only** on `detectionQueue`; config swaps hop onto that queue so nothing is mutated
+/// cross-thread.
 final class HandFaceDetector {
     private let analyzer: FrameAnalyzing
-    private let downscaler: FrameDownscaler
     private let proximity = ProximityAnalyzer()
     private let detectionQueue = DispatchQueue(label: "com.shoo.detection", qos: .userInitiated)
 
@@ -28,10 +28,8 @@ final class HandFaceDetector {
 
     /// Injection point so tests can drive a `MockFrameAnalyzer`.
     init(analyzer: FrameAnalyzing = VisionFrameAnalyzer(),
-         downscaler: FrameDownscaler = FrameDownscaler(),
          config: DetectorConfig = .default) {
         self.analyzer = analyzer
-        self.downscaler = downscaler
         self.config = config
         self.gesture = GestureDetector(config: config)
         self.proximityScorer = ProximityAnalyzer(reach: config.reach, chinRestPenalty: config.chinRestPenalty)
@@ -92,8 +90,8 @@ final class HandFaceDetector {
 
     private func runPipeline(_ pixelBuffer: CVPixelBuffer,
                              orientation: CGImagePropertyOrientation) -> DetectionResult {
-        let small = downscaler.downscale(pixelBuffer)
-        let observation = analyzer.analyze(small, orientation: orientation)
+        // The buffer is already downscaled & owned by the capture layer.
+        let observation = analyzer.analyze(pixelBuffer, orientation: orientation)
 
         // No face → no contact; decay the temporal model toward zero.
         guard let face = observation.face else {

@@ -33,6 +33,7 @@
 		6FD631CB10990F5A51F45F12 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFA16800CE5CE19F906F2DB /* SettingsView.swift */; };
 		715D7C67F9A501D59278A723 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71E5272C156A800FF97312C /* AppSettings.swift */; };
 		7255158C76398F74E42B49D3 /* GestureDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DC24CEEDD3AF49D2537DE8 /* GestureDetectorTests.swift */; };
+		7AF9CEF5580320BF7468000C /* FrameDownscalerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8FDE5D8E6924B7FC4E9D2C7 /* FrameDownscalerTests.swift */; };
 		8765F1000D453603A21DEFBA /* AlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A15251FB71871A55E87CCED0 /* AlertManager.swift */; };
 		882D4E7104225C166EFA91C9 /* DetectorConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6362C3E3E7D111326DEAC9DA /* DetectorConfigTests.swift */; };
 		8B30C00E1ED4F5DD3C6F5344 /* PowerCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05E56C586699D47FCE637FE4 /* PowerCoordinator.swift */; };
@@ -108,6 +109,7 @@
 		9A155F718F8D0C05006EEBA3 /* VisionFrameAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionFrameAnalyzer.swift; sourceTree = "<group>"; };
 		A15251FB71871A55E87CCED0 /* AlertManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertManager.swift; sourceTree = "<group>"; };
 		A71E5272C156A800FF97312C /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A8FDE5D8E6924B7FC4E9D2C7 /* FrameDownscalerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDownscalerTests.swift; sourceTree = "<group>"; };
 		AAFA16800CE5CE19F906F2DB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AE60577FA87FF8932FAB0AB9 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		B0F299589BA1479B340A3C9B /* SystemSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettings.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 				85BC56F423507CD568660D77 /* DetectionMetricsTests.swift */,
 				6362C3E3E7D111326DEAC9DA /* DetectorConfigTests.swift */,
 				3F496AE7A392040050189953 /* FaceGeometryTests.swift */,
+				A8FDE5D8E6924B7FC4E9D2C7 /* FrameDownscalerTests.swift */,
 				486AD99D1A28B8C44C2F76A6 /* FrameObservationFixture.swift */,
 				E3FB95C2DEA3E57BD71CD72E /* FrameRateCapTests.swift */,
 				5EBD2CB438382688D0B50BC9 /* FrameThrottleTests.swift */,
@@ -434,6 +437,7 @@
 				C6DE7CA048F9ECC68000C2B2 /* DetectionMetricsTests.swift in Sources */,
 				882D4E7104225C166EFA91C9 /* DetectorConfigTests.swift in Sources */,
 				AA511147130E4138A9CE923F /* FaceGeometryTests.swift in Sources */,
+				7AF9CEF5580320BF7468000C /* FrameDownscalerTests.swift in Sources */,
 				8BCB9D1B4B80A931099D1F42 /* FrameObservationFixture.swift in Sources */,
 				06886DD5E74F333C679B1F69 /* FrameRateCapTests.swift in Sources */,
 				DA4C8D37D7BBDB5E02DE08EA /* FrameThrottleTests.swift in Sources */,
