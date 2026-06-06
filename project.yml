@@ -1,0 +1,63 @@
+# XcodeGen project spec — source of truth for Shoo.xcodeproj.
+# Regenerate with: xcodegen generate   (or: bash scripts/bootstrap.sh)
+name: Shoo
+
+options:
+  bundleIdPrefix: com.shoo
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # TODO(plan-05): set the real 10-char Apple Developer Team ID before the first
+    # App Store archive/upload (no developer account is available in this environment).
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    # Shoo uses only OS-provided crypto → exempt from export compliance. Set here (and
+    # mirrored in Info.plist) so uploads don't re-prompt for export compliance each time.
+    INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+
+targets:
+  Shoo:
+    type: application
+    platform: macOS
+    sources:
+      - path: Shoo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shoo.Shoo
+        PRODUCT_NAME: Shoo
+        INFOPLIST_FILE: Shoo/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Shoo/Shoo.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_PREVIEWS: YES
+
+  ShooTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: ShooTests
+    dependencies:
+      - target: Shoo
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.shoo.ShooTests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Shoo:
+    build:
+      targets:
+        Shoo: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ShooTests

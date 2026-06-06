@@ -1,0 +1,7 @@
+# fastlane Appfile for Shoo.
+# TODO(plan-05): finalize the bundle identifier and Apple ID / team before the
+# first App Store upload (no Apple Developer account is available yet).
+app_identifier("com.shoo.Shoo")
+# apple_id("you@example.com")          # set at submission time
+# team_id("XXXXXXXXXX")                # 10-char Apple Developer Team ID
+# itc_team_id("XXXXXXXX")              # App Store Connect team id (if multiple)

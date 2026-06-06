@@ -1,0 +1,30 @@
+# SwiftLint configuration for Shoo.
+# Optional tool — install with `brew install swiftlint`. The build does not require it.
+
+included:
+  - Shoo
+  - ShooTests
+
+excluded:
+  - build
+  - DerivedData
+
+disabled_rules:
+  - todo            # scaffold intentionally ships with TODO markers
+
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - explicit_init
+
+line_length:
+  warning: 120
+  error: 160
+  ignores_comments: true
+
+identifier_name:
+  min_length: 2
+  excluded:
+    - id
+    - x
+    - y

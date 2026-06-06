@@ -1,0 +1,56 @@
+# fastlane configuration for Shoo.
+# Automation skeleton only — signing/upload specifics are owned by plan 05
+# (App Store distribution) and wired in via App Store Connect API key + match.
+# See plans/06-testing-ci.md and plans/05-appstore-distribution.md.
+
+default_platform(:mac)
+
+platform :mac do
+  desc "Run unit/integration tests with coverage"
+  lane :tests do
+    sh("cd .. && xcodegen generate")
+    run_tests(
+      project: "Shoo.xcodeproj",
+      scheme: "Shoo",
+      destination: "platform=macOS",
+      code_coverage: true,
+      xcargs: 'CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""'
+    )
+  end
+
+  desc "Build an unsigned archive (CI smoke check; no signing)"
+  lane :build_unsigned do
+    sh("cd .. && xcodegen generate")
+    build_mac_app(
+      project: "Shoo.xcodeproj",
+      scheme: "Shoo",
+      configuration: "Release",
+      skip_codesigning: true,
+      skip_package_pkg: true,
+      archive_path: "build/Shoo.xcarchive",
+      output_directory: "build"
+    )
+  end
+
+  desc "Bump the build number (source of truth = project.yml)"
+  lane :bump do
+    # Versions live in project.yml (settings.base.CURRENT_PROJECT_VERSION /
+    # MARKETING_VERSION) because the Xcode project is generated. Edit there,
+    # then regenerate. TODO(plan-05/06): implement the project.yml edit (yq) here.
+    UI.message("Edit CURRENT_PROJECT_VERSION in project.yml, then `xcodegen generate`.")
+  end
+
+  desc "Archive + upload to App Store / TestFlight"
+  lane :release do
+    # TODO(plan-05): provide app_store_connect_api_key, app_identifier, signing
+    # (match), then enable build_mac_app (signed) + upload_to_app_store / deliver.
+    UI.user_error!("Signing & upload are configured in plan 05 — not yet wired.")
+  end
+
+  desc "Generate App Store screenshots"
+  lane :screenshots do
+    # TODO(plan-05): snapshot/capture_screenshots wiring; screenshot content is
+    # owned by plan 05. Skeleton lane only.
+    UI.message("Screenshot automation is owned by plan 05.")
+  end
+end

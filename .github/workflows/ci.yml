@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: macos-14
+    env:
+      SCHEME: Shoo
+      PROJECT: Shoo.xcodeproj
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
+
+      - name: Cache Homebrew downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/Homebrew
+          key: brew-${{ runner.os }}-xcodegen-swiftlint-xcbeautify
+
+      - name: Install tools
+        run: brew install xcodegen swiftlint xcbeautify
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Verify XcodeGen has no drift
+        run: |
+          # The committed .xcodeproj must match what project.yml generates.
+          if ! git diff --quiet -- Shoo.xcodeproj; then
+            echo "::error::Shoo.xcodeproj is out of sync with project.yml. Run 'xcodegen generate' and commit."
+            git diff --stat -- Shoo.xcodeproj
+            exit 1
+          fi
+
+      - name: SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+      - name: Build (no signing)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project "$PROJECT" -scheme "$SCHEME" \
+            -destination 'platform=macOS' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | xcbeautify
+
+      - name: Test with coverage
+        run: |
+          set -o pipefail
+          rm -rf TestResults.xcresult
+          xcodebuild \
+            -project "$PROJECT" -scheme "$SCHEME" \
+            -destination 'platform=macOS' \
+            -configuration Debug \
+            -enableCodeCoverage YES \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            test | xcbeautify
+
+      - name: Report coverage
+        run: bash scripts/coverage.sh TestResults.xcresult
+
+      - name: Upload result bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults.xcresult
+          retention-days: 7

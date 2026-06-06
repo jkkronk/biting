@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+*.swp
+
+# Xcode
+build/
+DerivedData/
+*.xcresult
+TestResults.xcresult/
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode project — generated from project.yml via XcodeGen.
+# Uncomment the next line if you prefer to treat the .xcodeproj as generated
+# rather than committed. (Plan keeps it committed.)
+# Shoo.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods / Carthage (unused, here for safety)
+Pods/
+Carthage/Build/
+
+# Fastlane / signing artifacts
+*.mobileprovision
+*.p12
+*.cer
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/

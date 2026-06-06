@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+jobs:
+  archive:
+    name: Archive (unsigned until plan 05)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
+
+      - name: Install tools
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Plan 05 fills in signing (App Store Connect API key / match) and swaps
+      # this for `bundle exec fastlane release`. Until then we only produce an
+      # unsigned archive to prove the path end-to-end.
+      - name: Build unsigned archive
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Shoo.xcodeproj -scheme Shoo \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath build/Shoo.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive
+
+      - name: Upload archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shoo-unsigned-archive
+          path: build/Shoo.xcarchive
+          retention-days: 14
