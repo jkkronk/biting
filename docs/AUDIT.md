@@ -14,6 +14,22 @@ _Read-only audit by a 5-agent review team across Camera/Lifecycle, Detection/Vis
 
 > Already fixed (context, not in counts): the AVFoundation frame-rate-range crash (`FrameRateCap.clamp`) and the Settings-window-won't-focus issue (`AppState.presentSettings()` activation dance).
 
+## Resolution status (branch `audit-fixes`)
+
+Worked the plan in `~/.claude/plans` as 10 work packages. Test count 102 → **114**, all green.
+
+**Resolved:**
+- **P0** — pixel-buffer lifetime (WP1).
+- **All P1** — camera threading (WP2), window-activation by identity (WP3), `watchedGestures` wiring (WP4), time-driven state + clock seam (WP5), CI/docs hardening (WP8).
+- **Most P2** — restart robustness, `deviceWasConnected` guard, emit ordering (WP2); overlay re-fire race, overlay-snooze consistency, cooldown auto-expiry, notification auth at launch, overlay position clamp (WP6); schedule-boundary timer, scoped `scheduleOverride`, `effectiveState` for camera errors, `refreshPermission` stops camera (WP5); login-item UX (WP7); README + release-gate (WP8).
+- **Several P3 / dead code** — `reach` → `let`, `distanceToBox` rename, `AlertMode` removed (WP9); FPS single-source, thermal-branch collapse, PowerCoordinator `assumeIsolated`→`Task` (WP2); `foregroundWindowObserver` deinit (WP3); make-appicon comment (WP8).
+- **Test gaps** — `effectiveState`/`WatchState` precedence, snooze targets, boundary computation (WP5); gesture-mask suppression (WP4); `FrameDownscaler` (WP1); cooldown drain (WP6); mirror invariance (WP10).
+
+**Still open (deferred):**
+- P2: fold `isVideoMirrored` into orientation derivation (invariant is now documented + tested instead).
+- P3: onboarding `finish` double-invocation guard; annotate `AppSettings` `@MainActor`; `stop()` device teardown for long idle; sound-on-mute-during-escalation decision; `recognizedPoints(.all)` allocation; `PauseReason.lowPower` (kept — referenced by tests); orphan settings without UI (`displayDurationSeconds`/`clickToDismiss`/`soundName`); `coverage.sh` jq/awk fallback.
+- Tests: `AlertPresenter` / `DeviceSelector` partial coverage.
+
 ---
 
 ## P0 — Critical
