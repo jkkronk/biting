@@ -34,6 +34,10 @@ struct DetectorConfig: Equatable {
     var chinRestPenalty: Double
     /// EMA smoothing factor (α): `ema = α·score + (1-α)·ema`. Fixed across sensitivity.
     var smoothing: Double
+    /// Whether the mouth region is watched (nail/lip biting). When false its score is zeroed.
+    var mouthEnabled: Bool
+    /// Whether the nose region is watched (nose-picking). When false its score is zeroed.
+    var noseEnabled: Bool
 
     init(
         reach: CGFloat,
@@ -43,7 +47,9 @@ struct DetectorConfig: Equatable {
         minSustainedFrames: Int,
         handPointConfidence: Float,
         chinRestPenalty: Double = 0.4,
-        smoothing: Double = 0.5
+        smoothing: Double = 0.5,
+        mouthEnabled: Bool = true,
+        noseEnabled: Bool = true
     ) {
         self.reach = reach
         self.enterThreshold = enterThreshold
@@ -53,6 +59,18 @@ struct DetectorConfig: Equatable {
         self.handPointConfidence = handPointConfidence
         self.chinRestPenalty = chinRestPenalty
         self.smoothing = smoothing
+        self.mouthEnabled = mouthEnabled
+        self.noseEnabled = noseEnabled
+    }
+
+    /// Apply the user's watched-gesture selection to region gating. The mouth region covers
+    /// nail-biting and lip-biting; the nose region covers nose-picking. (Hair-pulling has no
+    /// dedicated detector region yet, so it doesn't gate anything here.)
+    func applying(gestures: GestureMask) -> DetectorConfig {
+        var config = self
+        config.mouthEnabled = gestures.contains(.nailBiting) || gestures.contains(.lipBiting)
+        config.noseEnabled = gestures.contains(.nosePicking)
+        return config
     }
 
     /// Map the 0…1 sensitivity slider to a concrete config.

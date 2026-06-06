@@ -91,9 +91,10 @@ final class AppState: ObservableObject {
             onDismiss: { [weak self] in self?.alerts.dismiss() },
             onSnooze: { [weak self] in self?.alerts.snooze(minutes: 5) }
         )
-        // Push the initial sensitivity-derived config and keep it in sync thereafter.
-        detector.updateConfig(DetectorConfig.from(sensitivity: settings.sensitivity))
+        // Push the initial sensitivity + watched-gesture config and keep it in sync.
+        detector.updateConfig(currentDetectorConfig())
         observeSensitivity()
+        observeWatchedGestures()
         observeAlertSettings()
         // Keep the menu's "reminders today" counter fresh.
         self.alerts.onFire = { [weak self] in self?.refreshTriggersToday() }
@@ -425,13 +426,33 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// The detector config derived from both the sensitivity slider and the watched-gesture
+    /// selection (disabled gestures are gated out by region).
+    private func currentDetectorConfig() -> DetectorConfig {
+        DetectorConfig.from(sensitivity: settings.sensitivity)
+            .applying(gestures: settings.watchedGestures)
+    }
+
     /// Rebuild the detector config whenever the sensitivity slider changes and push it onto
     /// the detection queue (the detector handles the cross-thread hop).
     private func observeSensitivity() {
         settings.$sensitivity
             .removeDuplicates()
-            .sink { [weak self] sensitivity in
-                self?.detector.updateConfig(DetectorConfig.from(sensitivity: sensitivity))
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.detector.updateConfig(self.currentDetectorConfig())
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Rebuild the detector config when the watched-gesture selection changes, so disabling a
+    /// gesture stops it firing live.
+    private func observeWatchedGestures() {
+        settings.$watchedGestures
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.detector.updateConfig(self.currentDetectorConfig())
             }
             .store(in: &cancellables)
     }

@@ -54,6 +54,21 @@ final class HandFaceDetectorTests: XCTestCase {
         XCTAssertEqual(last.region, .mouth)
     }
 
+    func testDisabledMouthGestureSuppressesContact() {
+        // Same mouth-contact frames, but the user only watches nose-picking → mouth is gated.
+        let analyzer = MockFrameAnalyzer(observation: mouthContactObservation())
+        let config = DetectorConfig.from(sensitivity: 0.5).applying(gestures: [.nosePicking])
+        let detector = HandFaceDetector(analyzer: analyzer, config: config)
+
+        var last: DetectionResult = .mouthContact(confidence: 1.0)
+        for _ in 0..<12 {
+            let exp = expectation(description: "frame")
+            detector.process(buffer, orientation: .up) { last = $0; exp.fulfill() }
+            wait(for: [exp], timeout: 2.0)
+        }
+        XCTAssertEqual(last, .none, "mouth contact must not fire when the gesture is disabled")
+    }
+
     func testNoFaceEmitsNone() {
         let analyzer = MockFrameAnalyzer(observation: FrameObservation(face: nil, hands: []))
         let detector = HandFaceDetector(analyzer: analyzer)

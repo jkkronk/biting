@@ -143,6 +143,14 @@ struct FrameScore: Equatable {
 
     static let zero = FrameScore(mouthScore: 0, noseScore: 0)
 
+    /// Zero out regions the user has disabled in Settings, so a disabled gesture can never
+    /// arm the temporal model. Applied per frame before `GestureDetector.ingest`.
+    func masked(mouthEnabled: Bool, noseEnabled: Bool) -> FrameScore {
+        FrameScore(
+            mouthScore: mouthEnabled ? mouthScore : 0,
+            noseScore: noseEnabled ? noseScore : 0)
+    }
+
     /// The region with the higher raw score (ties → mouth), or `.none` if both are 0.
     var dominant: Region {
         if mouthScore == 0 && noseScore == 0 { return .none }

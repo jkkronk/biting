@@ -100,7 +100,9 @@ final class HandFaceDetector {
         let geometry = FaceGeometry(landmarks: face, regionPad: config.regionPad)
         let frameScore = proximityScorer.frameScore(
             geometry: geometry, fingertips: observation.allFingertips)
-        return gesture.ingest(frameScore)
+        // Suppress regions the user isn't watching so a disabled gesture can't arm.
+        let masked = frameScore.masked(mouthEnabled: config.mouthEnabled, noseEnabled: config.noseEnabled)
+        return gesture.ingest(masked)
     }
 
     private func applyConfigToAnalyzer(_ config: DetectorConfig) {
