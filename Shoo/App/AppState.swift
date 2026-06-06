@@ -46,6 +46,10 @@ final class AppState: ObservableObject {
     /// ``ShooApp`` to ``ShooAppDelegate/finishOnboarding()``.
     var onOnboardingFinished: (() -> Void)?
 
+    /// Injectable wall clock — defaults to `Date()`. Tests inject a controlled clock so snooze,
+    /// schedule, and daily-stats logic is deterministic.
+    let now: () -> Date
+
     private let camera: FrameSource
     private let detector = HandFaceDetector()
     private let stats: CatchStatsStore
@@ -54,6 +58,8 @@ final class AppState: ObservableObject {
     private let power: PowerCoordinator
     private var cancellables = Set<AnyCancellable>()
     private var foregroundWindowObserver: NSObjectProtocol?
+    private var dayChangeObserver: NSObjectProtocol?
+    private var scheduleTimer: Timer?
     /// Windows we intentionally brought to the foreground (Settings / onboarding). Activation
     /// policy reverts to `.accessory` only when none of these remain visible — tracked by
     /// identity, not by (localized) window title. Weak, so closed windows drop out.
@@ -74,16 +80,17 @@ final class AppState: ObservableObject {
         }
     }
 
-    init(frameSource: FrameSource = CameraController()) {
+    init(frameSource: FrameSource = CameraController(),
+         now: @escaping () -> Date = { Date() }) {
+        self.now = now
         self.camera = frameSource
         self.power = PowerCoordinator(frameSource: frameSource)
         // Alerting layer: shared clock keeps the state machine and stats in lock-step.
-        let clock: () -> Date = { Date() }
-        let stats = CatchStatsStore(clock: clock)
+        let stats = CatchStatsStore(clock: now)
         let presenter = AlertPresenter(settings: settings)
         self.stats = stats
         self.presenter = presenter
-        self.alerts = AlertManager(presenter: presenter, stats: stats, clock: clock)
+        self.alerts = AlertManager(presenter: presenter, stats: stats, clock: now)
         self.alerts.escalationEnabled = settings.escalationEnabled
         wirePipeline()
         // Overlay dismiss/snooze affordances loop back to the manager.
@@ -102,6 +109,9 @@ final class AppState: ObservableObject {
         // Reflect the real login-item state (it can desync from settings via System Settings).
         syncLaunchAtLogin()
         installForegroundWindowObserver()
+        installDayRolloverObserver()
+        observeSchedule()
+        scheduleBoundaryTimer()
     }
 
     // MARK: - Control
@@ -172,6 +182,11 @@ final class AppState: ObservableObject {
         if let observer = foregroundWindowObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+        if let observer = dayChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        scheduleTimer?.invalidate()
+        snoozeTimer?.invalidate()
     }
 
     // MARK: - Alert controls (consumed by plan 04's menu)
@@ -239,11 +254,11 @@ final class AppState: ObservableObject {
                 camera.start()
             }
         case .denied, .restricted, .notDetermined:
-            if isWatching {
-                isWatching = false
-                sessionState = .noPermission(current)
-            } else if case .running = sessionState {
-                sessionState = .noPermission(current)
+            // Permission revoked mid-session: actually stop capture (releases the camera +
+            // resets the detector) rather than just flipping flags. `cameraStatus` (set above)
+            // already drives `effectiveState` to the right permission state.
+            if isWatching || isRunning {
+                stopWatching()
             }
         }
     }
@@ -283,7 +298,7 @@ final class AppState: ObservableObject {
     /// Snooze *watching* for `minutes` (also quiets reminders). Surfaced in the menu as a
     /// "snoozed" state with auto-resume; distinct from a session pause.
     func snooze(for minutes: Int) {
-        let until = Date().addingTimeInterval(TimeInterval(minutes) * 60)
+        let until = now().addingTimeInterval(TimeInterval(minutes) * 60)
         snoozeUntil = until
         snoozeAlerts(minutes: minutes)
         scheduleSnoozeTimer(until: until)
@@ -295,7 +310,7 @@ final class AppState: ObservableObject {
         let calendar = Calendar.current
         let startMinutes = settings.scheduleEnabled ? settings.activeStartMinutes : 540
         guard
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: Date()),
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: now()),
             let target = calendar.date(
                 bySettingHour: startMinutes / 60,
                 minute: startMinutes % 60,
@@ -304,7 +319,7 @@ final class AppState: ObservableObject {
             )
         else { return }
         snoozeUntil = target
-        let minutes = max(1, Int(target.timeIntervalSinceNow / 60))
+        let minutes = max(1, Int(target.timeIntervalSince(now()) / 60))
         snoozeAlerts(minutes: minutes)
         scheduleSnoozeTimer(until: target)
     }
@@ -319,14 +334,14 @@ final class AppState: ObservableObject {
 
     private func scheduleSnoozeTimer(until: Date) {
         snoozeTimer?.invalidate()
-        let interval = max(1, until.timeIntervalSinceNow)
+        let interval = max(1, until.timeIntervalSince(now()))
         snoozeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.handleSnoozeExpiry() }
         }
     }
 
     private func handleSnoozeExpiry() {
-        guard let until = snoozeUntil, until <= Date() else { return }
+        guard let until = snoozeUntil, until <= now() else { return }
         resume()
     }
 
@@ -336,12 +351,73 @@ final class AppState: ObservableObject {
     /// Advisory — actually gating the camera session on boundaries is plan 02's concern;
     /// this drives the menu's `.outsideSchedule` state and "Watch anyway" override.
     var isWithinActiveHours: Bool {
-        scheduleOverride || settings.activeSchedule.isActive(at: Date())
+        scheduleOverride || settings.activeSchedule.isActive(at: now())
     }
 
-    /// Ignore the active-hours schedule until the next launch (menu "Watch anyway").
+    /// Ignore the active-hours schedule until the next schedule boundary (menu "Watch anyway").
+    /// Scoped, not permanent: ``handleScheduleBoundary()`` clears it so it doesn't bleed into
+    /// future active/inactive windows.
     func overrideSchedule() {
         scheduleOverride = true
+    }
+
+    /// Recompute schedule-derived state when active-hours settings change.
+    private func observeSchedule() {
+        Publishers.Merge4(
+            settings.$scheduleEnabled.map { _ in () },
+            settings.$activeStartMinutes.map { _ in () },
+            settings.$activeEndMinutes.map { _ in () },
+            settings.$activeWeekdays.map { _ in () }
+        )
+        .sink { [weak self] in
+            self?.objectWillChange.send()
+            self?.scheduleBoundaryTimer()
+        }
+        .store(in: &cancellables)
+    }
+
+    /// The next instant the active-hours schedule could flip (next start or end time), or nil
+    /// when scheduling is off. Pure given `now()` so it's unit-testable.
+    func nextBoundaryDate() -> Date? {
+        guard settings.scheduleEnabled else { return nil }
+        let calendar = Calendar.current
+        let reference = now()
+        let candidates = [settings.activeStartMinutes, settings.activeEndMinutes]
+        let times: [Date] = candidates.compactMap { minutes in
+            guard let today = calendar.date(
+                bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: reference
+            ) else { return nil }
+            return today > reference ? today : calendar.date(byAdding: .day, value: 1, to: today)
+        }
+        return times.min()
+    }
+
+    /// Arm a one-shot timer to the next schedule boundary so the menu re-renders when the
+    /// active/inactive window flips (a computed `effectiveState` won't update on its own).
+    private func scheduleBoundaryTimer() {
+        scheduleTimer?.invalidate()
+        scheduleTimer = nil
+        guard let next = nextBoundaryDate() else { return }
+        let interval = max(1, next.timeIntervalSince(now()))
+        scheduleTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.handleScheduleBoundary() }
+        }
+    }
+
+    private func handleScheduleBoundary() {
+        scheduleOverride = false   // a boundary passed; stop overriding the schedule
+        objectWillChange.send()    // re-render the menu's computed effectiveState
+        scheduleBoundaryTimer()    // arm the next boundary
+    }
+
+    /// Refresh the daily counter at the date rollover so a long-idle agent doesn't show a
+    /// stale "N reminders today" across midnight.
+    private func installDayRolloverObserver() {
+        dayChangeObserver = NotificationCenter.default.addObserver(
+            forName: .NSCalendarDayChanged, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.refreshTriggersToday() }
+        }
     }
 
     // MARK: - Plan 04: effective watch state (drives the menu)
@@ -355,11 +431,13 @@ final class AppState: ObservableObject {
         case needsPermission
         case permissionDenied
         case noCamera
+        case cameraError(reason: String)
         case outsideSchedule
     }
 
-    /// The state the menu renders. Permission problems take precedence, then snooze, then the
-    /// schedule, then watch intent.
+    /// The state the menu renders. Permission problems take precedence, then hard camera
+    /// errors, then snooze, then the schedule, then watch intent. Keeping `.failed`/
+    /// `.interrupted` here means the popover label/dot agree with `menuBarSymbolName`.
     var effectiveState: WatchState {
         switch cameraStatus {
         case .notDetermined:
@@ -372,10 +450,14 @@ final class AppState: ObservableObject {
         switch sessionState {
         case .noDevice:
             return .noCamera
+        case .failed(let message):
+            return .cameraError(reason: message)
+        case .interrupted(let reason):
+            return .cameraError(reason: reason)
         default:
             break
         }
-        if let until = snoozeUntil, until > Date() {
+        if let until = snoozeUntil, until > now() {
             return .snoozed(until: until)
         }
         if !isWithinActiveHours {
@@ -388,7 +470,7 @@ final class AppState: ObservableObject {
 
     /// Refresh `triggersToday` from the catch-stats store (called on each fire and on appear).
     func refreshTriggersToday() {
-        triggersToday = stats.count(on: Date())
+        triggersToday = stats.count(on: now())
     }
 
     // MARK: - Plan 04: launch-at-login sync

@@ -102,12 +102,15 @@ final class AppStatePermissionTests: XCTestCase {
         await state.ensurePermissionThenStart()
         XCTAssertEqual(mock.startCount, 1)
 
-        // Access revoked while running.
+        // Access revoked while running: capture is actually stopped (not just flag-flipped),
+        // and the denied status drives the effective state.
         state.permissionProvider = { .denied }
         state.refreshPermission()
 
         XCTAssertFalse(state.isWatching)
-        XCTAssertEqual(state.sessionState, .noPermission(.denied))
+        XCTAssertEqual(state.cameraStatus, .denied)
+        XCTAssertEqual(state.effectiveState, .permissionDenied)
+        XCTAssertEqual(mock.stopCount, 1)
     }
 
     func testFramesFlowThroughMock() {

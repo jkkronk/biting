@@ -91,6 +91,14 @@ struct MenuBarView: View {
                 Button("Recheck") { appState.refreshCameraStatus() }
             }
 
+        case .cameraError(let reason):
+            VStack(alignment: .leading, spacing: 6) {
+                Text(reason)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Recheck") { appState.refreshCameraStatus() }
+            }
+
         case .snoozed(let until):
             VStack(alignment: .leading, spacing: 6) {
                 Text("Snoozed until \(Self.timeFormatter.string(from: until))")
@@ -151,7 +159,7 @@ struct MenuBarView: View {
         case .watching: return .green
         case .paused, .snoozed, .outsideSchedule: return .yellow
         case .needsPermission: return .orange
-        case .permissionDenied, .noCamera: return .red
+        case .permissionDenied, .noCamera, .cameraError: return .red
         }
     }
 
@@ -163,6 +171,7 @@ struct MenuBarView: View {
         case .needsPermission: return "Camera access needed"
         case .permissionDenied: return "Camera access denied"
         case .noCamera: return "No camera found"
+        case .cameraError: return "Camera unavailable"
         case .outsideSchedule: return "Paused by schedule"
         }
     }
