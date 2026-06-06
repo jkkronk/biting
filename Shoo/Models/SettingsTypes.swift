@@ -2,28 +2,9 @@ import Foundation
 
 /// Pure value types backing ``AppSettings``. Deliberately free of AppKit/AVFoundation so
 /// they stay trivially unit-testable (see `ActiveScheduleTests`).
-
-/// How a fired reminder is surfaced. UI lives in plan 04's Settings; playback in plan 03.
 ///
-/// Note: plan 03 models the alert channels as independent toggles
-/// (`overlayEnabled`/`soundEnabled`/`notificationEnabled`) on ``AppSettings``. `AlertMode`
-/// is a coarse, user-facing summary used by the menu/About copy; the underlying toggles
-/// remain the source of truth for behavior.
-enum AlertMode: String, CaseIterable, Identifiable {
-    case overlay
-    case overlayAndSound
-    case silentBadge
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .overlay: return "Overlay"
-        case .overlayAndSound: return "Overlay + Sound"
-        case .silentBadge: return "Silent badge"
-        }
-    }
-}
+/// Alert channels are modeled as independent toggles
+/// (`overlayEnabled`/`soundEnabled`/`notificationEnabled`) on ``AppSettings``.
 
 /// Which gesture types Shoo flags. Owned (semantically) by plan 01; stored/rendered here.
 struct GestureMask: OptionSet {

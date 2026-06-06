@@ -87,7 +87,10 @@ private struct SettingsForm: View {
     private var startupSection: some View {
         Section("Startup") {
             Toggle("Launch at login", isOn: Binding(
-                get: { loginItemState == .enabled },
+                // `.requiresApproval` means the user enabled it but macOS wants confirmation —
+                // treat it as "on" (intent) so the toggle doesn't snap back; the banner below
+                // points to System Settings.
+                get: { loginItemState == .enabled || loginItemState == .requiresApproval },
                 set: { setLaunchAtLogin($0) }
             ))
             Toggle("Start watching on launch", isOn: $settings.startWatchingOnLaunch)
@@ -162,12 +165,13 @@ private struct SettingsForm: View {
         loginItemError = false
         switch LaunchAtLogin.setEnabled(enabled) {
         case .success(let resultState):
+            // Trust the result; don't immediately re-read SMAppService.status, which can lag
+            // right after register()/unregister() and would clobber the true outcome.
             loginItemState = resultState
         case .failure:
+            // Keep the prior state (don't flip the toggle) and surface the error banner.
             loginItemError = true
         }
-        // Re-read authoritatively and mirror into settings.
-        loginItemState = LaunchAtLogin.state
         appState.syncLaunchAtLogin()
     }
 

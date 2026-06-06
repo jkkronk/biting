@@ -10,12 +10,13 @@ import Foundation
 /// ``GestureDetector``; this type only answers "this frame".
 struct ProximityAnalyzer {
     /// Capture radius: a fingertip exactly `reach` outside a region box contributes 0;
-    /// inside contributes 1. Driven by ``DetectorConfig/reach``.
-    var reach: CGFloat
+    /// inside contributes 1. Driven by ``DetectorConfig/reach``. `let` (set via the clamping
+    /// init) so it can never be mutated to 0 and produce a NaN in `score`.
+    let reach: CGFloat
 
     /// Multiplier applied to the mouth score when the dominant fingertips sit in the
     /// chin band but outside the mouth box (suppresses "resting chin on hand").
-    var chinRestPenalty: Double
+    let chinRestPenalty: Double
 
     init(reach: CGFloat = 0.09, chinRestPenalty: Double = 0.4) {
         self.reach = max(reach, 0.0001)  // avoid divide-by-zero
@@ -27,14 +28,14 @@ struct ProximityAnalyzer {
     /// Soft proximity score (0…1) of a set of weighted, confidence-tagged fingertips to a
     /// region box `R`.
     ///
-    /// For each fingertip: `proximity = clamp(1 - d/reach, 0, 1)` where `d` is the signed
-    /// distance to the box (0 inside). Contribution is `proximity · weight · confidence`;
+    /// For each fingertip: `proximity = clamp(1 - d/reach, 0, 1)` where `d` is the distance
+    /// to the box (0 inside). Contribution is `proximity · weight · confidence`;
     /// the region score is the sum, clamped to [0, 1].
     func score(region: CGRect, fingertips: [HandPoint]) -> Double {
         guard !region.isNull, !region.isEmpty else { return 0 }
         var total = 0.0
         for tip in fingertips {
-            let d = ProximityAnalyzer.signedDistanceToBox(tip.location, region)
+            let d = ProximityAnalyzer.distanceToBox(tip.location, region)
             let proximity = max(0, min(1, 1 - Double(d / reach)))
             total += proximity * tip.weight * Double(tip.confidence)
         }
@@ -76,7 +77,7 @@ struct ProximityAnalyzer {
 
     /// Euclidean distance from a point to the nearest edge of a box; 0 if the point is
     /// inside (or on the boundary). Pure, trivially unit-testable.
-    static func signedDistanceToBox(_ p: CGPoint, _ box: CGRect) -> CGFloat {
+    static func distanceToBox(_ p: CGPoint, _ box: CGRect) -> CGFloat {
         let dx = max(box.minX - p.x, 0, p.x - box.maxX)
         let dy = max(box.minY - p.y, 0, p.y - box.maxY)
         return (dx * dx + dy * dy).squareRoot()

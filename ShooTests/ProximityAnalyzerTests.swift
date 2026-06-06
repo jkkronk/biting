@@ -41,19 +41,19 @@ final class ProximityAnalyzerTests: XCTestCase {
         XCTAssertFalse(analyzer.isHandInFace(face: .null, handPoints: [CGPoint(x: 0.5, y: 0.5)]))
     }
 
-    // MARK: - signedDistanceToBox
+    // MARK: - distanceToBox
 
     func testSignedDistanceInsideIsZero() {
         let box = CGRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
-        XCTAssertEqual(ProximityAnalyzer.signedDistanceToBox(CGPoint(x: 0.4, y: 0.4), box), 0, accuracy: 1e-9)
+        XCTAssertEqual(ProximityAnalyzer.distanceToBox(CGPoint(x: 0.4, y: 0.4), box), 0, accuracy: 1e-9)
         // On the boundary is still 0.
-        XCTAssertEqual(ProximityAnalyzer.signedDistanceToBox(CGPoint(x: 0.2, y: 0.4), box), 0, accuracy: 1e-9)
+        XCTAssertEqual(ProximityAnalyzer.distanceToBox(CGPoint(x: 0.2, y: 0.4), box), 0, accuracy: 1e-9)
     }
 
     func testSignedDistanceOutsideIsMonotone() {
         let box = CGRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)
-        let near = ProximityAnalyzer.signedDistanceToBox(CGPoint(x: 0.65, y: 0.4), box)   // 0.05 right
-        let far = ProximityAnalyzer.signedDistanceToBox(CGPoint(x: 0.80, y: 0.4), box)    // 0.20 right
+        let near = ProximityAnalyzer.distanceToBox(CGPoint(x: 0.65, y: 0.4), box)   // 0.05 right
+        let far = ProximityAnalyzer.distanceToBox(CGPoint(x: 0.80, y: 0.4), box)    // 0.20 right
         XCTAssertEqual(near, 0.05, accuracy: 1e-9)
         XCTAssertEqual(far, 0.20, accuracy: 1e-9)
         XCTAssertLessThan(near, far)
@@ -61,7 +61,7 @@ final class ProximityAnalyzerTests: XCTestCase {
 
     func testSignedDistanceCornerIsEuclidean() {
         let box = CGRect(x: 0.2, y: 0.2, width: 0.4, height: 0.4)  // maxX=maxY=0.6
-        let d = ProximityAnalyzer.signedDistanceToBox(CGPoint(x: 0.9, y: 0.9), box)
+        let d = ProximityAnalyzer.distanceToBox(CGPoint(x: 0.9, y: 0.9), box)
         XCTAssertEqual(d, (0.3 * 0.3 + 0.3 * 0.3).squareRoot(), accuracy: 1e-9)
     }
 
