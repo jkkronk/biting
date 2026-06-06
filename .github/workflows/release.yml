@@ -1,8 +1,10 @@
 name: Release
 
+# Manual-only until plan 05 wires real signing + App Store upload. Until then this produces
+# an unsigned archive that can't be submitted, so we don't want a version tag to auto-fire a
+# dead-end "release". Re-enable `push: tags: ['v*.*.*']` once signing secrets are in place.
 on:
-  push:
-    tags: ['v*.*.*']
+  workflow_dispatch:
 
 jobs:
   archive:

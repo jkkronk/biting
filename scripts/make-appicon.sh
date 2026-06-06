@@ -2,8 +2,9 @@
 #
 # make-appicon.sh — regenerate the macOS AppIcon set from a single 1024×1024 master.
 #
-# Reproducibly resizes art/AppIcon-1024.png into the 10 PNGs the Mac App Store
-# requires (16–512 pt, @1x/@2x) and writes a matching Contents.json. Run after
+# Reproducibly resizes art/AppIcon-1024.png into 7 unique PNGs mapped to the 10 Mac App
+# Store icon slots (16–512 pt, @1x/@2x — sizes are shared across slots) and writes a
+# matching Contents.json. Run after
 # editing the master, then `xcodegen generate` is NOT needed (assets are globbed),
 # but a rebuild is required to recompile Assets.car.
 #

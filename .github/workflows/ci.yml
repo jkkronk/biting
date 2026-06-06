@@ -16,6 +16,9 @@ jobs:
     env:
       SCHEME: Shoo
       PROJECT: Shoo.xcodeproj
+      # Pin lint version so a SwiftLint release adding/tightening a rule can't turn a green
+      # build red without a source change.
+      SWIFTLINT_VERSION: '0.57.0'
     steps:
       - uses: actions/checkout@v4
 
@@ -28,21 +31,30 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
-          key: brew-${{ runner.os }}-xcodegen-swiftlint-xcbeautify
+          key: brew-${{ runner.os }}-xcodegen-xcbeautify
 
       - name: Install tools
-        run: brew install xcodegen swiftlint xcbeautify
+        run: |
+          brew install xcodegen xcbeautify
+          # Pinned SwiftLint from the official portable release (brew only offers latest).
+          curl -sSL -o /tmp/swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${SWIFTLINT_VERSION}/portable_swiftlint.zip"
+          unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint >/dev/null
+          sudo install /tmp/swiftlint/swiftlint /usr/local/bin/swiftlint
+          echo "xcodegen: $(xcodegen --version)"
+          echo "swiftlint: $(swiftlint version)"
 
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Verify XcodeGen has no drift
+      - name: Check XcodeGen drift (advisory)
         run: |
-          # The committed .xcodeproj must match what project.yml generates.
+          # The committed .xcodeproj should match project.yml. This is advisory because
+          # XcodeGen output can differ purely by tool version; CI regenerates before building
+          # anyway, so drift never affects the actual build/test.
           if ! git diff --quiet -- Shoo.xcodeproj; then
-            echo "::error::Shoo.xcodeproj is out of sync with project.yml. Run 'xcodegen generate' and commit."
+            echo "::warning::Shoo.xcodeproj differs from a fresh 'xcodegen generate'. If you changed project.yml, run xcodegen and commit; otherwise it's likely a tool-version difference."
             git diff --stat -- Shoo.xcodeproj
-            exit 1
           fi
 
       - name: SwiftLint
