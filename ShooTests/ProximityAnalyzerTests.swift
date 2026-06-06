@@ -8,6 +8,30 @@ final class ProximityAnalyzerTests: XCTestCase {
     // A face occupying the center of normalized image space.
     private let face = CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30)
 
+    // MARK: - Horizontal-mirror invariance
+
+    /// Front cameras deliver a mirrored image. Detection stays correct only because the
+    /// region scoring is symmetric about the face's vertical axis (mirroring applies equally
+    /// to face box and fingertips). This enforces that invariant so a future left/right-
+    /// asymmetric region can't silently break mirrored input. See `FaceGeometry`/`frameScore`.
+    func testRegionScoreIsHorizontalMirrorSymmetric() {
+        let analyzer = ProximityAnalyzer(reach: 0.09)
+        // Centered face (midX = 0.5) → mouth/nose fallback boxes are symmetric about x = 0.5.
+        let landmarks = FaceLandmarks(boundingBox: CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30))
+        let geometry = FaceGeometry(landmarks: landmarks, regionPad: 0.02)
+        func score(atX x: CGFloat) -> FrameScore {
+            analyzer.frameScore(
+                geometry: geometry,
+                fingertips: [HandPoint(location: CGPoint(x: x, y: 0.5), confidence: 0.9, weight: 1.0)])
+        }
+
+        let right = score(atX: 0.62)
+        let left = score(atX: 0.38)  // 0.62 mirrored about x = 0.5
+
+        XCTAssertEqual(right.mouthScore, left.mouthScore, accuracy: 1e-9)
+        XCTAssertEqual(right.noseScore, left.noseScore, accuracy: 1e-9)
+    }
+
     // MARK: - Legacy box-overlap wrapper (kept green)
 
     func testHandClearlyInsideFaceTriggers() {

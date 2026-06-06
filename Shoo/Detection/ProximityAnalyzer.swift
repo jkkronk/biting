@@ -44,6 +44,11 @@ struct ProximityAnalyzer {
 
     /// Compute the per-frame `FrameScore` for one frame's geometry.
     ///
+    /// INVARIANT: scoring is symmetric about the face's vertical axis, so a horizontally
+    /// mirrored frame (as a front camera delivers) yields the same scores — face box and
+    /// fingertips mirror together. Keep any future region horizontally symmetric, or handle
+    /// mirroring explicitly. Enforced by `ProximityAnalyzerTests.testRegionScoreIsHorizontalMirrorSymmetric`.
+    ///
     /// Applies the chin-rest penalty: if the mouth's contributing fingertips are inside
     /// the chin band but outside the mouth box (knuckles/palm resting, no fingertip at
     /// the mouth) the mouth score is suppressed.
