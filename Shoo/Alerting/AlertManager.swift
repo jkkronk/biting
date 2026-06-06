@@ -88,10 +88,16 @@ final class AlertManager {
         }
     }
 
-    /// Advance any time-based transitions without a new frame (e.g. from a UI timer). Snooze
-    /// expiry → `.idle`.
+    /// Advance time-based transitions without a new frame (e.g. from a UI timer or when
+    /// watching stops mid-cooldown): snooze expiry → `.idle`, and an elapsed cooldown →
+    /// `.idle` so the machine doesn't stay stuck in `.cooldown` once frames stop arriving.
     func tick(now: Date? = nil) {
-        expireTimedStates(now: now ?? clock())
+        let t = now ?? clock()
+        expireTimedStates(now: t)
+        if case .cooldown(let until, _) = state, t >= until {
+            state = .idle
+            resetArming()
+        }
     }
 
     // MARK: - UI controls
@@ -213,11 +219,15 @@ final class AlertManager {
         state = .cooldown(until: now.addingTimeInterval(cooldown), level: level)
     }
 
-    /// Expire snooze (→ idle). Cooldown expiry is handled lazily on the next frame.
+    /// Expire snooze (→ idle, clearing escalation). Cooldown expiry is intentionally NOT done
+    /// here: this runs on every frame, and the frame-driven `handleCooldown` needs to see the
+    /// still-`.cooldown` state to drive re-fire/escalation. The no-frame cooldown drain lives
+    /// in `tick()`.
     private func expireTimedStates(now: Date) {
         if case .snoozed(let until) = state, now >= until {
             state = .idle
             resetArming()
+            ignoredCycles = 0  // a completed snooze clears escalation
         }
     }
 

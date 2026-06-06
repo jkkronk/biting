@@ -85,6 +85,23 @@ final class AlertManagerStateMachineTests: XCTestCase {
         XCTAssertEqual(presenter.presentedLevels.count, 2)
     }
 
+    func testTickDrainsElapsedCooldownWithoutFrames() {
+        feed(true, count: 3)  // fire → enter cooldown
+        XCTAssertEqual(presenter.presentedLevels, [.first])
+
+        // Frames stop (e.g. watching stopped). Before cooldown elapses, tick keeps cooling.
+        advance(2)
+        manager.tick(now: now)
+        guard case .cooldown = manager.state else {
+            return XCTFail("should still be cooling down")
+        }
+
+        // Once elapsed, tick drains to idle so we don't stay stuck in cooldown.
+        advance(cooldown)  // now well past the cooldown deadline
+        manager.tick(now: now)
+        XCTAssertEqual(manager.state, .idle)
+    }
+
     func testEachFireRecordsExactlyOneCatch() {
         feed(true, count: 3)
         XCTAssertEqual(stats.count(on: now), 1)

@@ -37,6 +37,10 @@ final class OverlayController {
     /// the freshly-shown overlay.
     private var dismissTask: Task<Void, Never>?
     private var screenObserver: NSObjectProtocol?
+    /// Bumped on every `show()`. A fade-out completion handler captures the value at dismiss
+    /// time and bails if it changed, so a re-fire during the fade isn't hidden by the stale
+    /// completion of the previous dismiss.
+    private var generation = 0
 
     init() {
         // Re-center if the display arrangement changes while the panel is showing.
@@ -61,6 +65,7 @@ final class OverlayController {
     func show(level: EscalationLevel = .first) {
         let panel = ensurePanel()
         dismissTask?.cancel()
+        generation &+= 1  // invalidate any pending fade-out completion from a prior dismiss
 
         positionOnTargetScreen(panel)
 
@@ -94,14 +99,16 @@ final class OverlayController {
 
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         model.isVisible = false  // content scales/fades down
+        let gen = generation
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = reduceMotion ? Timing.reducedFade : Timing.fadeOut
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             panel.animator().alphaValue = 0
-        } completionHandler: { [weak panel] in
-            // Always fully hide even if an animation was skipped, so we never leave a
-            // partially-visible window.
+        } completionHandler: { [weak self, weak panel] in
+            // If a newer show() ran during the fade, it bumped `generation` — don't hide the
+            // freshly re-displayed overlay.
+            guard let self, self.generation == gen else { return }
             panel?.alphaValue = 0
             panel?.orderOut(nil)
         }
@@ -183,9 +190,12 @@ final class OverlayController {
         guard let screen = targetScreen() else { return }
         let frame = screen.visibleFrame
         let size = panel.frame.size
+        // Center, nudged ~8% high, then clamp so the panel stays fully on a short display.
+        let rawX = frame.midX - size.width / 2
+        let rawY = frame.midY - size.height / 2 + frame.height * 0.08
         let origin = NSPoint(
-            x: frame.midX - size.width / 2,
-            y: frame.midY - size.height / 2 + frame.height * 0.08
+            x: min(max(rawX, frame.minX), max(frame.minX, frame.maxX - size.width)),
+            y: min(max(rawY, frame.minY), max(frame.minY, frame.maxY - size.height))
         )
         panel.setFrameOrigin(origin)
     }

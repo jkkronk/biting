@@ -9,6 +9,9 @@ import Foundation
 /// toggles. Created once in ``ShooApp``.
 @MainActor
 final class AppState: ObservableObject {
+    /// How long the overlay's "Snooze" button quiets watching for.
+    static let overlaySnoozeMinutes = 5
+
     /// Whether Shoo is actively watching the webcam (user intent).
     @Published var isWatching: Bool = false
 
@@ -93,10 +96,11 @@ final class AppState: ObservableObject {
         self.alerts = AlertManager(presenter: presenter, stats: stats, clock: now)
         self.alerts.escalationEnabled = settings.escalationEnabled
         wirePipeline()
-        // Overlay dismiss/snooze affordances loop back to the manager.
+        // Overlay dismiss/snooze affordances loop back through AppState so the menu's snooze
+        // state + auto-resume timer stay consistent (not just the alert-only quiet).
         presenter.bindOverlay(
             onDismiss: { [weak self] in self?.alerts.dismiss() },
-            onSnooze: { [weak self] in self?.alerts.snooze(minutes: 5) }
+            onSnooze: { [weak self] in self?.snooze(for: AppState.overlaySnoozeMinutes) }
         )
         // Push the initial sensitivity + watched-gesture config and keep it in sync.
         detector.updateConfig(currentDetectorConfig())
@@ -112,6 +116,8 @@ final class AppState: ObservableObject {
         installDayRolloverObserver()
         observeSchedule()
         scheduleBoundaryTimer()
+        // Honor a notification permission granted in a previous session without re-toggling.
+        Task { await presenter.refreshNotificationAuthorization() }
     }
 
     // MARK: - Control

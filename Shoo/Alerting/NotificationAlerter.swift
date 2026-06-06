@@ -43,6 +43,19 @@ final class NotificationAlerter {
         }
     }
 
+    /// Refresh cached authorization from the system **without prompting** — call at launch so a
+    /// permission granted in a previous session is honored even if the user never opens Settings
+    /// this run (and a revoke is respected).
+    func refreshAuthorization() async {
+        let settings = await center.notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            isAuthorized = true
+        default:
+            isAuthorized = false
+        }
+    }
+
     /// Post (or replace) the reminder banner. No-op if not authorized.
     func post() {
         guard isAuthorized else { return }

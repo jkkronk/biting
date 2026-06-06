@@ -72,6 +72,11 @@ final class AlertPresenter: AlertPresenting {
         await notifications.requestAuthorizationIfNeeded()
     }
 
+    /// Refresh notification authorization without prompting (called at launch).
+    func refreshNotificationAuthorization() async {
+        await notifications.refreshAuthorization()
+    }
+
     /// Post a high-priority VoiceOver announcement once per fire so VO users hear the
     /// reminder even though the overlay is a non-key window.
     private func announce() {
