@@ -289,9 +289,7 @@ private struct AboutTab: View {
             Section {
                 Button("Show onboarding again") {
                     appState.settings.hasOnboarded = false
-                    NSApp.setActivationPolicy(.regular)
-                    appState.windowOpener.open(id: WindowID.onboarding)
-                    NSApp.activate(ignoringOtherApps: true)
+                    appState.presentOnboarding()
                 }
                 if !AppInfo.copyright.isEmpty {
                     Text(AppInfo.copyright)

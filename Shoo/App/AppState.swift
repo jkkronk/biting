@@ -54,6 +54,10 @@ final class AppState: ObservableObject {
     private let power: PowerCoordinator
     private var cancellables = Set<AnyCancellable>()
     private var foregroundWindowObserver: NSObjectProtocol?
+    /// Windows we intentionally brought to the foreground (Settings / onboarding). Activation
+    /// policy reverts to `.accessory` only when none of these remain visible — tracked by
+    /// identity, not by (localized) window title. Weak, so closed windows drop out.
+    private let trackedForegroundWindows = NSHashTable<NSWindow>.weakObjects()
 
     /// Override hooks so tests can drive the permission gate without real hardware or
     /// triggering the system prompt.
@@ -118,32 +122,54 @@ final class AppState: ObservableObject {
 
     // MARK: - Windows
 
-    /// Open the Settings window. As an accessory (menu-bar-only) app, we must flip to `.regular`
-    /// and activate so the window appears focused and frontmost; ``installForegroundWindowObserver()``
-    /// restores `.accessory` once the Settings/onboarding windows close.
+    /// Open the Settings window. As an accessory (menu-bar-only) app we must flip to `.regular`
+    /// and activate so the window is focused and frontmost; the close observer restores
+    /// `.accessory` once no tracked foreground window remains.
     func presentSettings() {
-        NSApp.setActivationPolicy(.regular)
-        openSettingsAction?()
-        NSApp.activate(ignoringOtherApps: true)
+        enterForegroundWindow { [weak self] in self?.openSettingsAction?() }
     }
 
-    /// Revert to a pure menu-bar agent (`.accessory`) when the Settings/onboarding windows close,
-    /// so the dock icon doesn't linger after the `.regular` dance in ``presentSettings()`` /
-    /// onboarding.
+    /// Open the onboarding window with the same activation dance + identity tracking.
+    func presentOnboarding() {
+        enterForegroundWindow { [weak self] in self?.windowOpener.open(id: WindowID.onboarding) }
+    }
+
+    /// Flip to `.regular`, run `open`, activate, then track the window that became key so the
+    /// revert logic keys off window *identity* rather than a localized title.
+    private func enterForegroundWindow(_ open: () -> Void) {
+        NSApp.setActivationPolicy(.regular)
+        open()
+        NSApp.activate(ignoringOtherApps: true)
+        DispatchQueue.main.async { [weak self] in
+            MainActor.assumeIsolated {
+                if let window = NSApp.keyWindow { self?.trackedForegroundWindows.add(window) }
+            }
+        }
+    }
+
+    /// Revert to a pure menu-bar agent (`.accessory`) once none of the tracked foreground
+    /// windows (Settings / onboarding) remain visible. The overlay panel is never tracked, so
+    /// it can't keep us in `.regular`. Idempotent — safe to call from multiple close paths.
+    func revertActivationIfNoForegroundWindows() {
+        guard NSApp.activationPolicy() == .regular else { return }
+        let anyVisible = trackedForegroundWindows.allObjects.contains { $0.isVisible }
+        if !anyVisible { NSApp.setActivationPolicy(.accessory) }
+    }
+
     private func installForegroundWindowObserver() {
         foregroundWindowObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: nil, queue: .main
-        ) { _ in
-            // Defer so the closing window is no longer counted as visible.
+        ) { [weak self] _ in
+            // willClose fires before the window hides; defer a tick, then re-evaluate.
             DispatchQueue.main.async {
-                guard NSApp.activationPolicy() == .regular else { return }
-                let hasForeground = NSApp.windows.contains { window in
-                    window.isVisible && (window.title == "Welcome to Shoo" || window.title.contains("Settings"))
-                }
-                if !hasForeground {
-                    NSApp.setActivationPolicy(.accessory)
-                }
+                MainActor.assumeIsolated { self?.revertActivationIfNoForegroundWindows() }
             }
+        }
+    }
+
+    deinit {
+        if let observer = foregroundWindowObserver {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 

@@ -39,17 +39,16 @@ final class ShooAppDelegate: NSObject, NSApplicationDelegate {
         appState?.refreshCameraStatus()
     }
 
-    /// Open the onboarding window, flip to `.regular` for a focusable, frontmost window.
+    /// Open the onboarding window (AppState does the activation dance + identity tracking).
     func presentOnboarding() {
         guard !didPresentOnboarding else { return }
         didPresentOnboarding = true
-        NSApp.setActivationPolicy(.regular)
-        appState?.windowOpener.open(id: WindowID.onboarding)
-        NSApp.activate(ignoringOtherApps: true)
+        appState?.presentOnboarding()
     }
 
-    /// Called when onboarding finishes or its window closes: return to a pure menu-bar agent.
+    /// Called when onboarding finishes or its window closes: return to a pure menu-bar agent,
+    /// but only if no other tracked foreground window (e.g. Settings) is still open.
     func finishOnboarding() {
-        NSApp.setActivationPolicy(.accessory)
+        appState?.revertActivationIfNoForegroundWindows()
     }
 }
