@@ -35,13 +35,17 @@ final class CameraController: NSObject, FrameSource {
     /// Active auto-pause reasons; the session runs only when this is empty.
     private var pauseReasons = PauseReasonSet()
 
+    /// Default capture/processing rate; single source of truth for both the device cap and the
+    /// software throttle so they can't silently diverge.
+    static let defaultTargetFPS = 12
+
     /// Capture frame-rate cap (lowered under thermal/low-power pressure).
-    private var targetFPS = 12
+    private var targetFPS = CameraController.defaultTargetFPS
 
     /// Software gate that admits at most `targetFPS` frames/sec to the detector and drops
     /// the rest — a backstop in case the device delivers above the requested cap. Touched
     /// only on `sessionQueue` (where frames arrive).
-    private let frameThrottle = FrameThrottle(targetFPS: 12)
+    private let frameThrottle = FrameThrottle(targetFPS: CameraController.defaultTargetFPS)
 
     /// Shrinks each accepted frame into a pool-owned buffer on `sessionQueue` before hand-off,
     /// so the capture-owned source surface is never read after the delegate returns.
@@ -51,6 +55,9 @@ final class CameraController: NSObject, FrameSource {
     private var restartAttempts = 0
     private let maxRestartAttempts = 4
     private var restartWindowStart = Date.distantPast
+    /// Bumped on every successful (re)start; pending backoff blocks captured under an older
+    /// generation bail, so a recovered session isn't torn down by a stale retry.
+    private var restartGeneration = 0
 
     // MARK: - FrameSource
 
@@ -118,6 +125,15 @@ final class CameraController: NSObject, FrameSource {
             session.startRunning()
         }
         emit(.running)
+        markRunningSucceeded()
+    }
+
+    /// Reset restart bookkeeping after a healthy (re)start so spaced-out transient errors
+    /// don't accumulate toward the terminal `.failed`, and cancel any pending backoff retry.
+    private func markRunningSucceeded() {
+        restartAttempts = 0
+        restartWindowStart = Date()
+        restartGeneration &+= 1
     }
 
     /// Bring the session into line with `shouldBeRunning` without changing user intent.
@@ -262,9 +278,13 @@ final class CameraController: NSObject, FrameSource {
     @objc private func sessionWasInterrupted(_ note: Notification) {
         // `AVCaptureSession.InterruptionReason` is iOS-only; on macOS the common cause
         // is another app grabbing the camera. Surface a generic, human-readable string.
-        let reason = "Camera in use by another app"
-        AppLogger.camera.notice("Session interrupted: \(reason, privacy: .public)")
-        emit(.interrupted(reason))
+        // Hop onto sessionQueue like the other handlers so all session access + emit are
+        // serialized in one domain (AV delivers notifications on an arbitrary thread).
+        sessionQueue.async { [weak self] in
+            let reason = "Camera in use by another app"
+            AppLogger.camera.notice("Session interrupted: \(reason, privacy: .public)")
+            self?.emit(.interrupted(reason))
+        }
     }
 
     @objc private func sessionInterruptionEnded(_ note: Notification) {
@@ -276,6 +296,7 @@ final class CameraController: NSObject, FrameSource {
                     self.session.startRunning()
                 }
                 self.emit(.running)
+                self.markRunningSucceeded()
             }
         }
     }
@@ -307,6 +328,9 @@ final class CameraController: NSObject, FrameSource {
         guard let device = note.object as? AVCaptureDevice else { return }
         sessionQueue.async { [weak self] in
             guard let self, self.wantsToWatch else { return }
+            // Skip if the newcomer is already our active device (spurious re-enumeration) —
+            // tearing down a healthy session would flicker the LED and drop frames.
+            guard device.uniqueID != self.activeDevice?.uniqueID else { return }
             // Reconfigure if we currently have no device, or the newcomer is the preferred one.
             let preferredID = UserDefaults.standard.string(forKey: DeviceSelector.storedDeviceIDKey)
             let isPreferred = preferredID != nil && device.uniqueID == preferredID
@@ -337,8 +361,10 @@ final class CameraController: NSObject, FrameSource {
         let backoff = min(pow(2.0, Double(restartAttempts - 1)) * 0.5, 4.0)  // 0.5, 1, 2, 4
         AppLogger.camera.notice("Auto-restart attempt \(self.restartAttempts, privacy: .public) in \(backoff, privacy: .public)s")
 
+        let generation = restartGeneration
         sessionQueue.asyncAfter(deadline: .now() + backoff) { [weak self] in
-            guard let self, self.shouldBeRunning else { return }
+            // Bail if a successful (re)start happened in the meantime, or we shouldn't run.
+            guard let self, self.restartGeneration == generation, self.shouldBeRunning else { return }
             self.tearDownConfiguration()
             self.startIfNeeded()
         }
@@ -346,10 +372,12 @@ final class CameraController: NSObject, FrameSource {
 
     // MARK: - State emission
 
-    /// Forward a state transition to the main actor. Coalesce no-ops cheaply by always emitting.
+    /// Forward a state transition to the main actor. Uses `DispatchQueue.main.async` (FIFO) so
+    /// transitions arrive in the order emitted — unstructured `Task`s are not ordered and could
+    /// deliver e.g. `.running` before `.starting`.
     private func emit(_ state: CameraSessionState) {
         guard let onStateChange else { return }
-        Task { @MainActor in onStateChange(state) }
+        DispatchQueue.main.async { onStateChange(state) }
     }
 
     deinit {

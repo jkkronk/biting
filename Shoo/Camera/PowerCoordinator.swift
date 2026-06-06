@@ -20,7 +20,9 @@ final class PowerCoordinator {
 
     private var observers: [NSObjectProtocol] = []
 
-    init(frameSource: FrameSource? = nil, baseFPS: Int = 12, reducedFPS: Int = 6) {
+    init(frameSource: FrameSource? = nil,
+         baseFPS: Int = CameraController.defaultTargetFPS,
+         reducedFPS: Int = 6) {
         self.frameSource = frameSource
         self.baseFPS = baseFPS
         self.reducedFPS = reducedFPS
@@ -35,56 +37,54 @@ final class PowerCoordinator {
         let defaultCenter = NotificationCenter.default
         let distributed = DistributedNotificationCenter.default()
 
-        // All observers register `queue: .main`, so handlers run on the main thread; the
-        // `MainActor.assumeIsolated` wrappers make that contract explicit to the compiler.
+        // Handlers hop via `Task { @MainActor in }` rather than `MainActor.assumeIsolated`:
+        // some `ProcessInfo` notifications are not guaranteed to honor `queue: .main`, and
+        // `assumeIsolated` would trap if one ever arrived off-main. These events aren't
+        // ordering-sensitive, so the async hop is harmless.
 
         // Display sleep/wake.
         observers.append(workspaceCenter.addObserver(
             forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.pause(.displayAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.displayAsleep) } })
         observers.append(workspaceCenter.addObserver(
             forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.resume(.displayAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.displayAsleep) } })
 
         // System sleep/wake — release the camera cleanly before suspend.
         observers.append(workspaceCenter.addObserver(
             forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.pause(.systemAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.systemAsleep) } })
         observers.append(workspaceCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.resume(.systemAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.systemAsleep) } })
 
         // Screen lock/unlock (read-only distributed notifications; allowed under sandbox).
         observers.append(distributed.addObserver(
             forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.pause(.screenLocked) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.screenLocked) } })
         observers.append(distributed.addObserver(
             forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.frameSource?.resume(.screenLocked) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.screenLocked) } })
 
         // Thermal pressure.
         observers.append(defaultCenter.addObserver(
             forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.handleThermalChange() } })
+        ) { [weak self] _ in Task { @MainActor in self?.handleThermalChange() } })
 
         // Low-power mode.
         observers.append(defaultCenter.addObserver(
             forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
-        ) { [weak self] _ in MainActor.assumeIsolated { self?.applyThrottlePolicy() } })
+        ) { [weak self] _ in Task { @MainActor in self?.applyThrottlePolicy() } })
     }
 
     // MARK: - Thermal / low-power policy
 
     private func handleThermalChange() {
         switch ProcessInfo.processInfo.thermalState {
-        case .nominal, .fair:
-            frameSource?.resume(.thermal)
-        case .serious:
-            // Throttle but keep running.
-            frameSource?.resume(.thermal)
         case .critical:
+            // Only critical pauses capture; serious merely throttles (handled below).
             frameSource?.pause(.thermal)
-        @unknown default:
+        default:
             frameSource?.resume(.thermal)
         }
         applyThrottlePolicy()
