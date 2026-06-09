@@ -103,6 +103,8 @@ final class AppSettings: ObservableObject {
     }
 
     /// Named system sound (`NSSound(named:)`); falls back to `NSSound.beep()` if invalid.
+    /// Persisted for forward-compat but deliberately has no Settings UI — there is exactly
+    /// one shipped sound; add a picker only when there is more than one.
     @Published var soundName: String {
         didSet { defaults.set(soundName, forKey: Keys.soundName) }
     }

@@ -70,6 +70,15 @@ private struct SettingsForm: View {
             Text("Minimum time between two reminders.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Stepper(
+                "Show reminder for: \(settings.displayDurationSeconds, specifier: "%.1f") s",
+                value: $settings.displayDurationSeconds,
+                in: 1...10,
+                step: 0.5
+            )
+            Text("How long the overlay stays on screen before fading out.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -79,6 +88,7 @@ private struct SettingsForm: View {
             Toggle("Play a sound", isOn: $settings.soundEnabled)
             Toggle("Show a notification", isOn: $settings.notificationEnabled)
             Toggle("Show camera snapshot in reminder", isOn: $settings.snapshotInReminderEnabled)
+            Toggle("Click overlay to dismiss", isOn: $settings.clickToDismiss)
             Text("The overlay is the primary reminder; sound and notifications are optional. "
                 + "The snapshot shows a quick photo of the moment (falls back to an icon when off).")
                 .font(.caption)
