@@ -1,6 +1,8 @@
 import AppKit
 import Combine
+import CoreVideo
 import Foundation
+import ImageIO
 
 /// App-wide state and the glue that wires the detection pipeline together.
 ///
@@ -59,6 +61,10 @@ final class AppState: ObservableObject {
     private let presenter: AlertPresenter
     private let alerts: AlertManager
     private let power: PowerCoordinator
+    /// The most recent processed camera frame, captured on the main actor just before a
+    /// detection is handled. Read by ``presenter``'s snapshot provider to put a photo in the
+    /// reminder overlay. In-memory only — never persisted.
+    private var latestFrame: (buffer: CVPixelBuffer, orientation: CGImagePropertyOrientation)?
     private var cancellables = Set<AnyCancellable>()
     private var foregroundWindowObserver: NSObjectProtocol?
     private var dayChangeObserver: NSObjectProtocol?
@@ -102,6 +108,13 @@ final class AppState: ObservableObject {
             onDismiss: { [weak self] in self?.alerts.dismiss() },
             onSnooze: { [weak self] in self?.snooze(for: AppState.overlaySnoozeMinutes) }
         )
+        // Put a small camera photo in the overlay (when enabled). Evaluated at present-time so
+        // it reflects the frame current when the reminder fires.
+        presenter.snapshotProvider = { [weak self] in
+            guard let self, self.settings.snapshotInReminderEnabled,
+                  let frame = self.latestFrame else { return nil }
+            return CameraSnapshot.image(from: frame.buffer, orientation: frame.orientation)
+        }
         // Push the initial sensitivity + watched-gesture config and keep it in sync.
         detector.updateConfig(currentDetectorConfig())
         observeSensitivity()
@@ -508,6 +521,9 @@ final class AppState: ObservableObject {
             guard let self else { return }
             self.detector.process(pixelBuffer, orientation: orientation) { result in
                 Task { @MainActor in
+                    // Stash the current frame before handling so a synchronous fire can put it
+                    // in the overlay (the pooled buffer is safe to cross queues).
+                    self.latestFrame = (pixelBuffer, orientation)
                     self.alerts.handleDetection(result, cooldown: self.settings.cooldownSeconds)
                 }
             }

@@ -55,6 +55,7 @@
 		BE133CDB36D77C09800404B0 /* FaceGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A177347561B3647AF085FC /* FaceGeometry.swift */; };
 		C144804889757483B20E6CCC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5CE6D1A647BDEAA926C82D1 /* Models.swift */; };
 		C50337B6FEC1A68270AF4F56 /* StopMessages.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C34B3C4DFB440EBDD37936 /* StopMessages.swift */; };
+		C5E90066D208FC9C8D9F26B8 /* CameraSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53AF7C514FFCF96AF48F3742 /* CameraSnapshot.swift */; };
 		C6DE7CA048F9ECC68000C2B2 /* DetectionMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BC56F423507CD568660D77 /* DetectionMetricsTests.swift */; };
 		C88446DB439690A2AC95D528 /* CameraPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 913A1B601DF90951B88C5FDB /* CameraPermission.swift */; };
 		D987B47495F3115E5D9BCE49 /* DetectorConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AB78B22A32CA1C3D9489BD /* DetectorConfig.swift */; };
@@ -91,6 +92,7 @@
 		3F496AE7A392040050189953 /* FaceGeometryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceGeometryTests.swift; sourceTree = "<group>"; };
 		486AD99D1A28B8C44C2F76A6 /* FrameObservationFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameObservationFixture.swift; sourceTree = "<group>"; };
 		4C71851B5B98299401FAD867 /* FrameSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameSource.swift; sourceTree = "<group>"; };
+		53AF7C514FFCF96AF48F3742 /* CameraSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSnapshot.swift; sourceTree = "<group>"; };
 		54BEB107FE94FCF81DBA823B /* GestureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureDetector.swift; sourceTree = "<group>"; };
 		573699377C07F1EF46DDF103 /* ShooAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShooAppDelegate.swift; sourceTree = "<group>"; };
 		5EBD2CB438382688D0B50BC9 /* FrameThrottleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameThrottleTests.swift; sourceTree = "<group>"; };
@@ -250,6 +252,7 @@
 			children = (
 				A15251FB71871A55E87CCED0 /* AlertManager.swift */,
 				DEEF57DEA79DBC4B9217AFEA /* AlertPresenter.swift */,
+				53AF7C514FFCF96AF48F3742 /* CameraSnapshot.swift */,
 				82D5B7EB3764DB8C9C9DEBDA /* NotificationAlerter.swift */,
 				C17BE83C1A9C3E7207072D25 /* OverlayController.swift */,
 				C08FB2D9E5F29DF50568BF91 /* OverlayView.swift */,
@@ -400,6 +403,7 @@
 				A117BADBB47ECDCE5E80C0E1 /* CameraController.swift in Sources */,
 				C88446DB439690A2AC95D528 /* CameraPermission.swift in Sources */,
 				91BED76043B826AEB80D51A6 /* CameraSessionState.swift in Sources */,
+				C5E90066D208FC9C8D9F26B8 /* CameraSnapshot.swift in Sources */,
 				3DEADB192DCB646E1512F53A /* CatchStats.swift in Sources */,
 				D987B47495F3115E5D9BCE49 /* DetectorConfig.swift in Sources */,
 				9B5431023A1D3CB26C2E27F0 /* DeviceSelector.swift in Sources */,

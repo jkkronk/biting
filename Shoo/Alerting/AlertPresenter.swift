@@ -34,6 +34,11 @@ final class AlertPresenter: AlertPresenting {
         self.notifications = notifications ?? NotificationAlerter()
     }
 
+    /// Supplies the camera snapshot shown in the overlay, evaluated at present-time. Set by
+    /// ``AppState``; returns nil when the snapshot setting is off or no frame is available.
+    /// Kept off the ``AlertPresenting`` protocol so the test stub is unaffected.
+    var snapshotProvider: (() -> NSImage?)?
+
     /// Wire overlay dismiss/snooze affordances back to the manager (set by ``AppState``).
     func bindOverlay(onDismiss: @escaping () -> Void, onSnooze: @escaping () -> Void) {
         overlay.onDismiss = onDismiss
@@ -45,7 +50,7 @@ final class AlertPresenter: AlertPresenting {
         if settings.overlayEnabled {
             overlay.displayDuration = settings.displayDurationSeconds
             overlay.clickToDismiss = settings.clickToDismiss
-            overlay.show(level: level)
+            overlay.show(level: level, snapshot: snapshotProvider?())
         }
 
         // Sound: on if enabled, or forced once by a `.persistent` escalation nudge.

@@ -56,8 +56,28 @@ enum StopMessages {
         "Give the face a day off.",
     ]
 
+    /// Bold "Gotcha!"-style headlines shown above the snapshot. One is picked at random
+    /// each time the reminder appears.
+    static let headlines: [String] = [
+        "Gotcha!",
+        "Busted!",
+        "Caught ya!",
+        "Aha!",
+        "Spotted!",
+        "Hand!",
+        "Nope!",
+        "Gotcha again!",
+        "There it is!",
+        "Seen it!",
+    ]
+
     /// A random message, with a safe fallback if the pool is ever empty.
     static func random() -> String {
         all.randomElement() ?? "Hands away from your face"
+    }
+
+    /// A random headline, with a safe fallback if the pool is ever empty.
+    static func randomHeadline() -> String {
+        headlines.randomElement() ?? "Gotcha!"
     }
 }

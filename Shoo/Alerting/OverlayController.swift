@@ -62,7 +62,8 @@ final class OverlayController {
     // MARK: - Show / dismiss
 
     /// Show the reminder at the given escalation level, fading in and scheduling auto-dismiss.
-    func show(level: EscalationLevel = .first) {
+    /// `snapshot` is a small camera photo shown in place of the ✋ emoji (nil → emoji fallback).
+    func show(level: EscalationLevel = .first, snapshot: NSImage? = nil) {
         let panel = ensurePanel()
         dismissTask?.cancel()
         generation &+= 1  // invalidate any pending fade-out completion from a prior dismiss
@@ -72,8 +73,10 @@ final class OverlayController {
         let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         model.reduceMotion = reduceMotion
 
-        // Fresh cheeky line every appearance.
+        // Fresh headline, cheeky line, and snapshot every appearance.
+        model.headline = StopMessages.randomHeadline()
         model.message = StopMessages.random()
+        model.snapshot = snapshot
 
         // Window starts transparent; fade alpha to 1. Content scales up unless reduce-motion.
         panel.alphaValue = 0

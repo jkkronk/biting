@@ -78,7 +78,9 @@ private struct SettingsForm: View {
             Toggle("Show overlay", isOn: $settings.overlayEnabled)
             Toggle("Play a sound", isOn: $settings.soundEnabled)
             Toggle("Show a notification", isOn: $settings.notificationEnabled)
-            Text("The overlay is the primary reminder; sound and notifications are optional.")
+            Toggle("Show camera snapshot in reminder", isOn: $settings.snapshotInReminderEnabled)
+            Text("The overlay is the primary reminder; sound and notifications are optional. "
+                + "The snapshot shows a quick photo of the moment (falls back to an icon when off).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

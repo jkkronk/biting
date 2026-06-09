@@ -20,6 +20,7 @@ final class AppSettings: ObservableObject {
         static let clickToDismiss = "clickToDismiss"
         static let escalationEnabled = "escalationEnabled"
         static let displayDurationSeconds = "displayDurationSeconds"
+        static let snapshotInReminderEnabled = "snapshotInReminderEnabled"
         // Plan 04: start/onboarding/gestures/schedule.
         static let startWatchingOnLaunch = "startWatchingOnLaunch"
         static let watchedGestures = "watchedGestures"
@@ -36,6 +37,7 @@ final class AppSettings: ObservableObject {
             sensitivity, cooldownSeconds, launchAtLogin,
             overlayEnabled, soundEnabled, soundName, notificationEnabled,
             clickToDismiss, escalationEnabled, displayDurationSeconds,
+            snapshotInReminderEnabled,
             startWatchingOnLaunch, watchedGestures,
             scheduleEnabled, activeWeekdays, activeStartMinutes, activeEndMinutes,
             hasOnboarded,
@@ -60,6 +62,7 @@ final class AppSettings: ObservableObject {
         Keys.clickToDismiss: false,
         Keys.escalationEnabled: true,
         Keys.displayDurationSeconds: 2.5,
+        Keys.snapshotInReminderEnabled: true,
         Keys.startWatchingOnLaunch: true,
         Keys.watchedGestures: GestureMask.all.rawValue,
         Keys.scheduleEnabled: false,
@@ -124,6 +127,12 @@ final class AppSettings: ObservableObject {
     /// How long the overlay holds before fading out (seconds).
     @Published var displayDurationSeconds: Double {
         didSet { defaults.set(displayDurationSeconds, forKey: Keys.displayDurationSeconds) }
+    }
+
+    /// Show a small camera snapshot in the reminder overlay (instead of the ✋ icon). On by
+    /// default; the snapshot is transient and never persisted.
+    @Published var snapshotInReminderEnabled: Bool {
+        didSet { defaults.set(snapshotInReminderEnabled, forKey: Keys.snapshotInReminderEnabled) }
     }
 
     // MARK: - Start / onboarding / gestures (plan 04)
@@ -191,6 +200,7 @@ final class AppSettings: ObservableObject {
         self.clickToDismiss = defaults.bool(forKey: Keys.clickToDismiss)
         self.escalationEnabled = defaults.bool(forKey: Keys.escalationEnabled)
         self.displayDurationSeconds = defaults.double(forKey: Keys.displayDurationSeconds)
+        self.snapshotInReminderEnabled = defaults.bool(forKey: Keys.snapshotInReminderEnabled)
         self.startWatchingOnLaunch = defaults.bool(forKey: Keys.startWatchingOnLaunch)
         self.watchedGestures = GestureMask(rawValue: defaults.integer(forKey: Keys.watchedGestures))
         self.hasOnboarded = defaults.bool(forKey: Keys.hasOnboarded)
@@ -243,6 +253,7 @@ final class AppSettings: ObservableObject {
         clickToDismiss = defaults.bool(forKey: Keys.clickToDismiss)
         escalationEnabled = defaults.bool(forKey: Keys.escalationEnabled)
         displayDurationSeconds = defaults.double(forKey: Keys.displayDurationSeconds)
+        snapshotInReminderEnabled = defaults.bool(forKey: Keys.snapshotInReminderEnabled)
         startWatchingOnLaunch = defaults.bool(forKey: Keys.startWatchingOnLaunch)
         watchedGestures = GestureMask(rawValue: defaults.integer(forKey: Keys.watchedGestures))
         hasOnboarded = defaults.bool(forKey: Keys.hasOnboarded)
