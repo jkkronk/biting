@@ -12,6 +12,7 @@ App Store app. Each plan is self-contained and meant to be executed one at a tim
 | 04 | [Settings, Onboarding & Menu UX](04-settings-onboarding.md) | First-run onboarding + permission priming, full preferences, scheduling, launch-at-login correctness, state-driven menu |
 | 05 | [App Store Distribution & Compliance](05-appstore-distribution.md) | Signing/provisioning, entitlements review, app icon & assets, `PrivacyInfo.xcprivacy`, ASC listing, review-risk mitigation, submission |
 | 06 | [Testing, CI & Release Engineering](06-testing-ci.md) | Test pyramid, mock frame source, SwiftLint, GitHub Actions CI, coverage gates, fastlane/release automation, Makefile |
+| 07 | [Post-Audit Fixes & Polish](07-post-audit-improvements.md) | Final cleanup after the `docs/AUDIT.md` work: onboarding window-tracking fix, camera output-attach failure path, snooze-timer re-arm, orphan settings UI, dead code, deferred-audit items, remaining test gaps |
 
 ## Recommended implementation order
 
@@ -39,6 +40,9 @@ The plans share a few seams, so order matters. Recommended sequence:
 6. **06 — Testing & CI runs alongside.** Stand up the GitHub Actions workflow + lint
    early (it's cheap and catches regressions immediately), then deepen tests as each
    feature plan lands. The mock seams it depends on are introduced by plans 01–03.
+7. **07 — Post-Audit Fixes & Polish.** After 01–06 and the `docs/AUDIT.md` work-package
+   pass: the issues found in the 2026-06 follow-up review plus the audit's deferred
+   backlog. Independent of plan 05 and can land before or alongside it.
 
 ## Cross-plan seams to keep consistent
 
