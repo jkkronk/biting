@@ -30,6 +30,7 @@
 		5F25DB53387DBC694BED6A82 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE60577FA87FF8932FAB0AB9 /* LaunchAtLogin.swift */; };
 		5FA329569500BE74ADCB6934 /* ActiveScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C66C257B4FC7A2406362799A /* ActiveScheduleTests.swift */; };
 		694FD7A6B2854D5BCC1D6756 /* AppStatePermissionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8477DD4C2A1731C7DB881A41 /* AppStatePermissionTests.swift */; };
+		6969AEC3C37F94930D3ADB9E /* AlertPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A148B6B8B2CB352B66DD89 /* AlertPresenterTests.swift */; };
 		6FD631CB10990F5A51F45F12 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAFA16800CE5CE19F906F2DB /* SettingsView.swift */; };
 		715D7C67F9A501D59278A723 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A71E5272C156A800FF97312C /* AppSettings.swift */; };
 		7255158C76398F74E42B49D3 /* GestureDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2DC24CEEDD3AF49D2537DE8 /* GestureDetectorTests.swift */; };
@@ -64,6 +65,7 @@
 		F0C8FADA6B81C3FB4DFA73E6 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C278443DC7B16D3C6B857E /* AppState.swift */; };
 		F81132AC5DCE8DBC871EA56F /* AppStateScheduleSnoozeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD85309118CE48F8D39A455C /* AppStateScheduleSnoozeTests.swift */; };
 		F8AC0D7933C0E63E428ABEC3 /* CameraSessionStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A8C9C7B9AADCFA4234F956 /* CameraSessionStateTests.swift */; };
+		FC0089B12D511D23A30F575B /* DeviceSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC522C0705BFBD5E150E0EBF /* DeviceSelectorTests.swift */; };
 		FD797F841D9F05591045C030 /* FrameDownscaler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13826236659820FD622404F /* FrameDownscaler.swift */; };
 /* End PBXBuildFile section */
 
@@ -97,6 +99,7 @@
 		573699377C07F1EF46DDF103 /* ShooAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShooAppDelegate.swift; sourceTree = "<group>"; };
 		5EBD2CB438382688D0B50BC9 /* FrameThrottleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameThrottleTests.swift; sourceTree = "<group>"; };
 		607E3EF649618788F07DD9DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		61A148B6B8B2CB352B66DD89 /* AlertPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenterTests.swift; sourceTree = "<group>"; };
 		6362C3E3E7D111326DEAC9DA /* DetectorConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetectorConfigTests.swift; sourceTree = "<group>"; };
 		675597F7C5135AD66A2FC2F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		75A27F37F79042DA92895C89 /* CatchStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatchStats.swift; sourceTree = "<group>"; };
@@ -116,6 +119,7 @@
 		A71E5272C156A800FF97312C /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		A8FDE5D8E6924B7FC4E9D2C7 /* FrameDownscalerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDownscalerTests.swift; sourceTree = "<group>"; };
 		AAFA16800CE5CE19F906F2DB /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AC522C0705BFBD5E150E0EBF /* DeviceSelectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSelectorTests.swift; sourceTree = "<group>"; };
 		AE60577FA87FF8932FAB0AB9 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		B0F299589BA1479B340A3C9B /* SystemSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSettings.swift; sourceTree = "<group>"; };
 		B89E735F9D6556AA7E0AA865 /* SettingsTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTypes.swift; sourceTree = "<group>"; };
@@ -164,6 +168,7 @@
 			children = (
 				C66C257B4FC7A2406362799A /* ActiveScheduleTests.swift */,
 				C5514022984FAC8CFBADCCB0 /* AlertManagerStateMachineTests.swift */,
+				61A148B6B8B2CB352B66DD89 /* AlertPresenterTests.swift */,
 				C91D45F0A17558F1BCDF079B /* AppSettingsMigrationTests.swift */,
 				8477DD4C2A1731C7DB881A41 /* AppStatePermissionTests.swift */,
 				DD85309118CE48F8D39A455C /* AppStateScheduleSnoozeTests.swift */,
@@ -171,6 +176,7 @@
 				01484E62B015290F769BFF45 /* CatchStatsStoreTests.swift */,
 				85BC56F423507CD568660D77 /* DetectionMetricsTests.swift */,
 				6362C3E3E7D111326DEAC9DA /* DetectorConfigTests.swift */,
+				AC522C0705BFBD5E150E0EBF /* DeviceSelectorTests.swift */,
 				3F496AE7A392040050189953 /* FaceGeometryTests.swift */,
 				A8FDE5D8E6924B7FC4E9D2C7 /* FrameDownscalerTests.swift */,
 				486AD99D1A28B8C44C2F76A6 /* FrameObservationFixture.swift */,
@@ -441,6 +447,7 @@
 			files = (
 				5FA329569500BE74ADCB6934 /* ActiveScheduleTests.swift in Sources */,
 				5EEF854EBCDA5FFD416A26D3 /* AlertManagerStateMachineTests.swift in Sources */,
+				6969AEC3C37F94930D3ADB9E /* AlertPresenterTests.swift in Sources */,
 				9C08550D86089ADC1DF0EF5E /* AppSettingsMigrationTests.swift in Sources */,
 				694FD7A6B2854D5BCC1D6756 /* AppStatePermissionTests.swift in Sources */,
 				F81132AC5DCE8DBC871EA56F /* AppStateScheduleSnoozeTests.swift in Sources */,
@@ -448,6 +455,7 @@
 				E9C715C4C157D373DEF44BCE /* CatchStatsStoreTests.swift in Sources */,
 				C6DE7CA048F9ECC68000C2B2 /* DetectionMetricsTests.swift in Sources */,
 				882D4E7104225C166EFA91C9 /* DetectorConfigTests.swift in Sources */,
+				FC0089B12D511D23A30F575B /* DeviceSelectorTests.swift in Sources */,
 				AA511147130E4138A9CE923F /* FaceGeometryTests.swift in Sources */,
 				7AF9CEF5580320BF7468000C /* FrameDownscalerTests.swift in Sources */,
 				8BCB9D1B4B80A931099D1F42 /* FrameObservationFixture.swift in Sources */,

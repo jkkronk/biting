@@ -69,6 +69,29 @@ final class HandFaceDetectorTests: XCTestCase {
         XCTAssertEqual(last, .none, "mouth contact must not fire when the gesture is disabled")
     }
 
+    func testSecondHandAloneDrivesContact() {
+        // Vision reports up to two hands; fingertips are pooled across all of them, so a
+        // contact from the second hand must register even when the first hand is far away.
+        let awayHand = HandLandmarks(
+            fingertips: [HandPoint(location: CGPoint(x: 0.1, y: 0.1), confidence: 0.95, weight: 1.0)])
+        let mouthHand = HandLandmarks(
+            fingertips: [HandPoint(location: SyntheticFixture.mouthCenter, confidence: 0.95, weight: 1.0)])
+        let analyzer = MockFrameAnalyzer(
+            observation: FrameObservation(face: SyntheticFixture.face, hands: [awayHand, mouthHand]))
+        let detector = HandFaceDetector(
+            analyzer: analyzer,
+            config: DetectorConfig.from(sensitivity: 0.5))
+
+        var last: DetectionResult = .none
+        for _ in 0..<10 {
+            let exp = expectation(description: "frame")
+            detector.process(buffer, orientation: .up) { last = $0; exp.fulfill() }
+            wait(for: [exp], timeout: 2.0)
+        }
+        XCTAssertTrue(last.isContact)
+        XCTAssertEqual(last.region, .mouth)
+    }
+
     func testNoFaceEmitsNone() {
         let analyzer = MockFrameAnalyzer(observation: FrameObservation(face: nil, hands: []))
         let detector = HandFaceDetector(analyzer: analyzer)

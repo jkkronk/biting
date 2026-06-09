@@ -19,3 +19,5 @@ final class SoundPlayer {
         }
     }
 }
+
+extension SoundPlayer: SoundPlaying {}

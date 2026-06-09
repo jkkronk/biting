@@ -48,6 +48,23 @@ final class AppStateScheduleSnoozeTests: XCTestCase {
         if case .snoozed = state.effectiveState { XCTFail("should no longer be snoozed") }
     }
 
+    func testSnoozeExpiryRearmsWhenTimerFiresEarly() {
+        var current = Date(timeIntervalSince1970: 1_000_000)
+        let (state, _) = authorizedState(now: { current })
+        state.isWatching = true
+        state.snooze(for: 10)
+        let until = Date(timeIntervalSince1970: 1_000_000).addingTimeInterval(600)
+
+        // Timer fired marginally early: the snooze must survive (and re-arm), not get stuck.
+        state.handleSnoozeExpiry()
+        XCTAssertEqual(state.snoozeUntil, until)
+
+        // Past the deadline the same path resumes and clears the snooze.
+        current = until.addingTimeInterval(1)
+        state.handleSnoozeExpiry()
+        XCTAssertNil(state.snoozeUntil)
+    }
+
     // MARK: - Snooze targets
 
     func testSnoozeUntilTomorrowMorningTargetsNineAM() {

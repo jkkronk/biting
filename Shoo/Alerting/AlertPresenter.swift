@@ -11,6 +11,33 @@ protocol AlertPresenting: AnyObject {
     func dismiss()
 }
 
+/// Seam over the overlay channel so ``AlertPresenter``'s fan-out logic is unit-testable
+/// with a spy. ``OverlayController`` is the production conformance.
+@MainActor
+protocol OverlayPresenting: AnyObject {
+    var displayDuration: TimeInterval { get set }
+    var clickToDismiss: Bool { get set }
+    var onDismiss: (() -> Void)? { get set }
+    var onSnooze: (() -> Void)? { get set }
+    func show(level: EscalationLevel, snapshot: NSImage?)
+    func dismiss()
+}
+
+/// Seam over the sound channel. ``SoundPlayer`` is the production conformance.
+@MainActor
+protocol SoundPlaying: AnyObject {
+    func play(named name: String)
+}
+
+/// Seam over the notification channel. ``NotificationAlerter`` is the production conformance.
+@MainActor
+protocol NotificationPosting: AnyObject {
+    @discardableResult
+    func requestAuthorizationIfNeeded() async -> Bool
+    func refreshAuthorization() async
+    func post()
+}
+
 /// Fans a fired alert out to every enabled mode (overlay / sound / notification) plus a
 /// VoiceOver announcement. Reads ``AppSettings`` live so toggles take effect immediately.
 ///
@@ -18,15 +45,15 @@ protocol AlertPresenting: AnyObject {
 @MainActor
 final class AlertPresenter: AlertPresenting {
     private let settings: AppSettings
-    private let overlay: OverlayController
-    private let sound: SoundPlayer
-    private let notifications: NotificationAlerter
+    private let overlay: OverlayPresenting
+    private let sound: SoundPlaying
+    private let notifications: NotificationPosting
 
     init(
         settings: AppSettings,
-        overlay: OverlayController? = nil,
-        sound: SoundPlayer? = nil,
-        notifications: NotificationAlerter? = nil
+        overlay: OverlayPresenting? = nil,
+        sound: SoundPlaying? = nil,
+        notifications: NotificationPosting? = nil
     ) {
         self.settings = settings
         self.overlay = overlay ?? OverlayController()

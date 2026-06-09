@@ -209,3 +209,5 @@ final class OverlayController {
         positionOnTargetScreen(panel)
     }
 }
+
+extension OverlayController: OverlayPresenting {}

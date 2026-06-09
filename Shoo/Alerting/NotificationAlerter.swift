@@ -78,3 +78,5 @@ final class NotificationAlerter {
         }
     }
 }
+
+extension NotificationAlerter: NotificationPosting {}
