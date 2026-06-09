@@ -149,9 +149,9 @@ private struct SettingsForm: View {
         Section {
             Button("Show onboarding again") {
                 settings.hasOnboarded = false
-                NSApp.setActivationPolicy(.regular)
-                appState.windowOpener.open(id: WindowID.onboarding)
-                NSApp.activate(ignoringOtherApps: true)
+                // Route through AppState so the window is identity-tracked and closing
+                // Settings while onboarding is open can't revert the app to .accessory.
+                appState.presentOnboarding()
             }
             if !AppInfo.copyright.isEmpty {
                 Text(AppInfo.copyright)

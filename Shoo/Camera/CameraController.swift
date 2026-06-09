@@ -200,6 +200,14 @@ final class CameraController: NSObject, FrameSource {
         if session.canAddOutput(videoOutput) {
             videoOutput.setSampleBufferDelegate(self, queue: sessionQueue)
             session.addOutput(videoOutput)
+        } else if !session.outputs.contains(videoOutput) {
+            // Only legitimate to skip when the output is already attached (reconfigure
+            // path — tearDownConfiguration keeps it). Otherwise the session would "run"
+            // with the LED on but deliver no frames and surface no error.
+            AppLogger.camera.error("Cannot attach video output for \(device.localizedName, privacy: .public)")
+            session.commitConfiguration()
+            emit(.failed("Camera doesn't support video capture"))
+            return  // leaves isConfigured == false, like the input-failure path
         }
 
         session.commitConfiguration()

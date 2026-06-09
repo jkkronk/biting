@@ -359,9 +359,16 @@ final class AppState: ObservableObject {
         }
     }
 
-    private func handleSnoozeExpiry() {
-        guard let until = snoozeUntil, until <= now() else { return }
-        resume()
+    /// Internal (not private) so tests can drive expiry through the injected clock.
+    func handleSnoozeExpiry() {
+        guard let until = snoozeUntil else { return }
+        if until <= now() {
+            resume()
+        } else {
+            // The one-shot timer fired marginally early — re-arm to the real deadline
+            // instead of bailing and leaving snoozeUntil/snoozeTimer stale forever.
+            scheduleSnoozeTimer(until: until)
+        }
     }
 
     // MARK: - Plan 04: scheduling

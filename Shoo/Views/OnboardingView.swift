@@ -17,6 +17,9 @@ struct OnboardingView: View {
     @State private var step: Step = .welcome
     @State private var requesting = false
     @State private var cameraOutcome: CameraPermission.Status?
+    /// `finish` is reachable from both the Done button and `.onDisappear`; this makes the
+    /// pair idempotent so `onOnboardingFinished` can't double-fire.
+    @State private var didFinish = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -173,6 +176,8 @@ struct OnboardingView: View {
     }
 
     private func finish(markOnboarded: Bool, startIfPossible: Bool) {
+        guard !didFinish else { return }
+        didFinish = true
         if markOnboarded {
             appState.settings.hasOnboarded = true
         }
