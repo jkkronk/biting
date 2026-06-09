@@ -549,10 +549,12 @@ final class AppState: ObservableObject {
     }
 
     /// Rebuild the detector config whenever the sensitivity slider changes and push it onto
-    /// the detection queue (the detector handles the cross-thread hop).
+    /// the detection queue (the detector handles the cross-thread hop). Debounced: a slider
+    /// drag emits many values per second and each rebuild is a queue hop + analyzer swap.
     private func observeSensitivity() {
         settings.$sensitivity
             .removeDuplicates()
+            .debounce(for: .milliseconds(150), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.detector.updateConfig(self.currentDetectorConfig())
