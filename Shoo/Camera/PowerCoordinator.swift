@@ -18,7 +18,9 @@ final class PowerCoordinator {
     /// Reduced rate under serious thermal pressure or low-power mode.
     private let reducedFPS: Int
 
-    private var observers: [NSObjectProtocol] = []
+    /// Each token paired with the center it was registered on, so `deinit` removes it from
+    /// exactly that center. (`DistributedNotificationCenter` is a `NotificationCenter`.)
+    private var observers: [(center: NotificationCenter, token: NSObjectProtocol)] = []
 
     init(frameSource: FrameSource? = nil,
          baseFPS: Int = CameraController.defaultTargetFPS,
@@ -43,38 +45,38 @@ final class PowerCoordinator {
         // ordering-sensitive, so the async hop is harmless.
 
         // Display sleep/wake.
-        observers.append(workspaceCenter.addObserver(
+        observers.append((center: workspaceCenter, token: workspaceCenter.addObserver(
             forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.displayAsleep) } })
-        observers.append(workspaceCenter.addObserver(
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.displayAsleep) } }))
+        observers.append((center: workspaceCenter, token: workspaceCenter.addObserver(
             forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.displayAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.displayAsleep) } }))
 
         // System sleep/wake — release the camera cleanly before suspend.
-        observers.append(workspaceCenter.addObserver(
+        observers.append((center: workspaceCenter, token: workspaceCenter.addObserver(
             forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.systemAsleep) } })
-        observers.append(workspaceCenter.addObserver(
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.systemAsleep) } }))
+        observers.append((center: workspaceCenter, token: workspaceCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.systemAsleep) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.systemAsleep) } }))
 
         // Screen lock/unlock (read-only distributed notifications; allowed under sandbox).
-        observers.append(distributed.addObserver(
+        observers.append((center: distributed, token: distributed.addObserver(
             forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.screenLocked) } })
-        observers.append(distributed.addObserver(
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.pause(.screenLocked) } }))
+        observers.append((center: distributed, token: distributed.addObserver(
             forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.screenLocked) } })
+        ) { [weak self] _ in Task { @MainActor in self?.frameSource?.resume(.screenLocked) } }))
 
         // Thermal pressure.
-        observers.append(defaultCenter.addObserver(
+        observers.append((center: defaultCenter, token: defaultCenter.addObserver(
             forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.handleThermalChange() } })
+        ) { [weak self] _ in Task { @MainActor in self?.handleThermalChange() } }))
 
         // Low-power mode.
-        observers.append(defaultCenter.addObserver(
+        observers.append((center: defaultCenter, token: defaultCenter.addObserver(
             forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.applyThrottlePolicy() } })
+        ) { [weak self] _ in Task { @MainActor in self?.applyThrottlePolicy() } }))
     }
 
     // MARK: - Thermal / low-power policy
@@ -99,13 +101,8 @@ final class PowerCoordinator {
     }
 
     deinit {
-        let workspaceCenter = NSWorkspace.shared.notificationCenter
-        let defaultCenter = NotificationCenter.default
-        let distributed = DistributedNotificationCenter.default()
-        for observer in observers {
-            workspaceCenter.removeObserver(observer)
-            defaultCenter.removeObserver(observer)
-            distributed.removeObserver(observer)
+        for (center, token) in observers {
+            center.removeObserver(token)
         }
     }
 }

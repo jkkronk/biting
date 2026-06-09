@@ -7,6 +7,11 @@ import Foundation
 /// scene. An `ObservableObject` so it can be shared through ``AppState`` and observed
 /// by the menu, settings, and onboarding windows — one source of truth across scenes,
 /// which also centralizes migration (see ``migrateIfNeeded()``).
+///
+/// `@MainActor`: all real call sites (``AppState``, the SwiftUI views, ``AlertPresenter``)
+/// are main-actor already; the annotation makes that a compiler guarantee so a future
+/// background mutation can't race the `didSet` UserDefaults writes.
+@MainActor
 final class AppSettings: ObservableObject {
     private enum Keys {
         static let sensitivity = "sensitivity"

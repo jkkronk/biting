@@ -3,6 +3,7 @@ import XCTest
 
 /// Tests for ``AppSettings`` defaults registration, schema stamping, persistence round-trips,
 /// and ``AppSettings/resetToDefaults()`` — all on an isolated `UserDefaults` suite.
+@MainActor
 final class AppSettingsMigrationTests: XCTestCase {
     private var suiteName: String!
     private var defaults: UserDefaults!

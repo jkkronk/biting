@@ -69,6 +69,7 @@ final class AppState: ObservableObject {
     private var foregroundWindowObserver: NSObjectProtocol?
     private var dayChangeObserver: NSObjectProtocol?
     private var scheduleTimer: Timer?
+    private var snoozeTimer: Timer?
     /// Windows we intentionally brought to the foreground (Settings / onboarding). Activation
     /// policy reverts to `.accessory` only when none of these remain visible — tracked by
     /// identity, not by (localized) window title. Weak, so closed windows drop out.
@@ -404,6 +405,11 @@ final class AppState: ObservableObject {
 
     /// The next instant the active-hours schedule could flip (next start or end time), or nil
     /// when scheduling is off. Pure given `now()` so it's unit-testable.
+    ///
+    /// Deliberately ignores `activeWeekdays`: on inactive days the timer fires as a no-op
+    /// (≤2/day) and `effectiveState` recomputes through the weekday-aware
+    /// `ActiveSchedule.isActive`, so the UI is always correct. Weekday-aware boundary math
+    /// isn't worth the calendar complexity.
     func nextBoundaryDate() -> Date? {
         guard settings.scheduleEnabled else { return nil }
         let calendar = Calendar.current
@@ -509,8 +515,6 @@ final class AppState: ObservableObject {
             settings.launchAtLogin = enabled
         }
     }
-
-    private var snoozeTimer: Timer?
 
     // MARK: - Wiring
 

@@ -13,7 +13,6 @@ import ImageIO
 /// cross-thread.
 final class HandFaceDetector {
     private let analyzer: FrameAnalyzing
-    private let proximity = ProximityAnalyzer()
     private let detectionQueue = DispatchQueue(label: "com.shoo.detection", qos: .userInitiated)
 
     // detectionQueue-only state ----------------------------------------------

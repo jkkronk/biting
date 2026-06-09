@@ -90,14 +90,17 @@ final class VisionFrameAnalyzer: FrameAnalyzing {
     private func extractHands() -> [HandLandmarks] {
         var hands: [HandLandmarks] = []
         for observation in handRequest.results ?? [] {
-            guard let recognized = try? observation.recognizedPoints(.all) else { continue }
+            // Query only the joints we use (5 tips + 2 DIPs + wrist) instead of
+            // `recognizedPoints(.all)`, which allocates all 21 joints per frame.
             var tips: [HandPoint] = []
             for (joint, weight) in Self.primaryTips + Self.secondaryJoints {
-                guard let point = recognized[joint], point.confidence > handPointConfidence else { continue }
+                guard let point = try? observation.recognizedPoint(joint),
+                      point.confidence > handPointConfidence else { continue }
                 tips.append(HandPoint(location: point.location, confidence: point.confidence, weight: weight))
             }
             // Wrist (weight 0): posture only, not triggering.
-            let wrist = recognized[.wrist].flatMap { $0.confidence > handPointConfidence ? $0.location : nil }
+            let wrist = (try? observation.recognizedPoint(.wrist))
+                .flatMap { $0.confidence > handPointConfidence ? $0.location : nil }
             if !tips.isEmpty || wrist != nil {
                 hands.append(HandLandmarks(fingertips: tips, wrist: wrist))
             }
