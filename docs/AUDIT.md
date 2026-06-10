@@ -25,10 +25,30 @@ Worked the plan in `~/.claude/plans` as 10 work packages. Test count 102 → **1
 - **Several P3 / dead code** — `reach` → `let`, `distanceToBox` rename, `AlertMode` removed (WP9); FPS single-source, thermal-branch collapse, PowerCoordinator `assumeIsolated`→`Task` (WP2); `foregroundWindowObserver` deinit (WP3); make-appicon comment (WP8).
 - **Test gaps** — `effectiveState`/`WatchState` precedence, snooze targets, boundary computation (WP5); gesture-mask suppression (WP4); `FrameDownscaler` (WP1); cooldown drain (WP6); mirror invariance (WP10).
 
-**Still open (deferred):**
-- P2: fold `isVideoMirrored` into orientation derivation (invariant is now documented + tested instead).
-- P3: onboarding `finish` double-invocation guard; annotate `AppSettings` `@MainActor`; `stop()` device teardown for long idle; sound-on-mute-during-escalation decision; `recognizedPoints(.all)` allocation; `PauseReason.lowPower` (kept — referenced by tests); orphan settings without UI (`displayDurationSeconds`/`clickToDismiss`/`soundName`); `coverage.sh` jq/awk fallback.
-- Tests: `AlertPresenter` / `DeviceSelector` partial coverage.
+**Resolved by plan 07 (`plans/07-post-audit-improvements.md`, branch `plan-07-post-audit`).**
+Test count 114 → **132**, all green. Picked up the deferred items plus new findings from the
+2026-06 follow-up review:
+- New fixes: Settings' "Show onboarding again" bypassed window-identity tracking (could
+  revert to `.accessory` with onboarding still visible); silent "configured but no output"
+  camera state now emits `.failed`; snooze timer re-arms on a marginally-early fire; dead
+  `HandFaceDetector.proximity` removed; sensitivity-driven config rebuilds debounced;
+  PowerCoordinator observers removed per-center.
+- Deferred items closed: onboarding `finish` double-invocation guard; `AppSettings`
+  `@MainActor`; `recognizedPoints(.all)` → per-joint queries; orphan settings
+  (`displayDurationSeconds`/`clickToDismiss` got Settings UI, `soundName` documented as
+  deliberately UI-less); `coverage.sh` jq/python3 fallback with report-only degradation.
+- Test gaps closed: `AlertPresenter` (via `OverlayPresenting`/`SoundPlaying`/
+  `NotificationPosting` seams) and `DeviceSelector` (via pure `CameraDescriptor` ranking
+  core); snooze early-fire re-arm; two-hands fingertip pooling.
+
+**Still open (intentionally parked):**
+- P2: fold `isVideoMirrored` into orientation derivation — invariant is documented + tested
+  instead; revisit only if rotated external cameras become a real use case.
+- P3: `stop()` device teardown for long idle (trade against resume latency);
+  sound-on-mute-during-escalation (current behavior intentional — revisit with user
+  feedback); `PauseReason.lowPower` (kept — referenced by tests).
+- `nextBoundaryDate()` ignores `activeWeekdays` by design (≤2 no-op timer fires/day;
+  `effectiveState` recomputes through the weekday-aware `ActiveSchedule.isActive`).
 
 ---
 
