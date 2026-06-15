@@ -5,12 +5,15 @@ _Read-only audit by a 5-agent review team across Camera/Lifecycle, Detection/Vis
 **Status legend:** `[ ]` open · `[~]` partial · `[x]` done
 **Severity:** P0 Critical · P1 High · P2 Medium · P3 Low/polish
 
-| Priority | Count |
-|---|---|
-| P0 Critical | 1 |
-| P1 High | 5 |
-| P2 Medium | 12 |
-| P3 Low / polish | ~14 |
+| Priority | Identified | Open now |
+|---|---|---|
+| P0 Critical | 1 | 0 |
+| P1 High | 5 | 1¹ |
+| P2 Medium | 12 | tracked below² |
+| P3 Low / polish | ~14 | tracked below² |
+
+¹ Four of five P1s are fixed and checked off below; the one remaining (`[~]`) is the CI version-pin item — SwiftLint is pinned, XcodeGen is not yet.
+² The **P0 and P1 checkboxes below are reconciled to the current code**. P2/P3 checkboxes still track the original audit snapshot — see the "Resolution status" sections for what has since been addressed.
 
 > Already fixed (context, not in counts): the AVFoundation frame-rate-range crash (`FrameRateCap.clamp`) and the Settings-window-won't-focus issue (`AppState.presentSettings()` activation dance).
 
@@ -54,7 +57,10 @@ Test count 114 → **132**, all green. Picked up the deferred items plus new fin
 
 ## P0 — Critical
 
-- [ ] **CVPixelBuffer used across queues without retention → use-after-recycle.**
+> **Reconciled to current code (2026-06).** The single P0 below is resolved — see the
+> "Resolution status" sections above for the work-package trail.
+
+- [x] **CVPixelBuffer used across queues without retention → use-after-recycle.** _(Resolved, WP1.)_
   `Shoo/Camera/CameraController.swift:359-368` (`captureOutput`) → `Shoo/Detection/HandFaceDetector.swift:64-74` (`process`), stored at `:25` (`pendingFrame`), consumed at `:83/:95`.
   `captureOutput` hands the buffer from `CMSampleBufferGetImageBuffer` straight into `detectionQueue.async { ... }` and returns. With `alwaysDiscardsLateVideoFrames = true` and a finite pool, AVFoundation can recycle the backing IOSurface as soon as the delegate returns — Vision then reads a buffer that's being overwritten → garbage detections or crashes under load. Nothing retains the buffer/sample.
   **Fix:** Eliminate the cross-queue hazard — downscale **synchronously on `sessionQueue`** (where the buffer is valid) via the existing `FrameDownscaler` (which already outputs an owned pool buffer) and hand only that owned buffer to `detectionQueue`. Alternative: pass and retain the whole `CMSampleBuffer` (a Swift class) until `runPipeline` finishes.
@@ -63,24 +69,24 @@ Test count 114 → **132**, all green. Picked up the deferred items plus new fin
 
 ## P1 — High
 
-- [ ] **`sessionWasInterrupted` emits off `sessionQueue`; data race on `onStateChange`.**
+- [x] **`sessionWasInterrupted` emits off `sessionQueue`; data race on `onStateChange`.** _(Resolved, WP2 — all five `@objc` AV handlers now wrap their body in `sessionQueue.async`.)_
   `CameraController.swift:257-263` (and the handler structure `:257-314`). Other AV notifications re-dispatch onto `sessionQueue`, but `sessionWasInterrupted` calls `emit(...)` directly from AVFoundation's delivery thread, which reads `self.onStateChange` (`:346`) — mutated on the main actor (`AppState.swift:384`). Inconsistent threading + benign-but-real race.
   **Fix:** Wrap every `@objc` AV handler body in `sessionQueue.async { [weak self] in … }` so all `emit`/session access shares one serialization domain.
 
-- [ ] **Activation-policy restore is title-string–coupled and has two uncoordinated restore paths.**
+- [x] **Activation-policy restore is title-string–coupled and has two uncoordinated restore paths.** _(Resolved, WP3 — windows tracked by identity in `trackedForegroundWindows`; single guarded `revertActivationIfNoForegroundWindows()`.)_
   `AppState.swift:133-148` (willClose observer matches `title == "Welcome to Shoo" || title.contains("Settings")`) vs `ShooAppDelegate.swift:52-54` (`finishOnboarding()` unconditionally forces `.accessory`).
   The Settings window title is **localized** (`contains("Settings")` fails on non-English systems), the observer runs for *every* window (object: nil) and could fold in the overlay panel, and closing onboarding while Settings is open can wrongly drop to `.accessory`.
   **Fix:** Track the windows you intentionally opened (weak refs to the onboarding + settings `NSWindow`), match by identity not title, exclude the overlay panel, and route `finishOnboarding`'s restore through the same single guarded check.
 
-- [ ] **`watchedGestures` is a dead setting — never wired into detection.**
+- [x] **`watchedGestures` is a dead setting — never wired into detection.** _(Resolved, WP4 — `observeWatchedGestures()` → `currentDetectorConfig().applying(gestures:)`; disabled regions masked per frame.)_
   `AppSettings.swift:138-140`, UI at `SettingsView.swift:44-67`; consumed nowhere (`AppState` only pushes `sensitivity`). Unchecking "Nose picking" still fires reminders.
   **Fix:** Thread `watchedGestures` into `DetectorConfig`/`HandFaceDetector` with an `observeWatchedGestures()` sink mirroring `observeSensitivity()` — or hide the toggles until per-gesture classification exists.
 
-- [ ] **`triggersToday` never resets at the date rollover while the app stays open.**
+- [x] **`triggersToday` never resets at the date rollover while the app stays open.** _(Resolved, WP5 — `installDayRolloverObserver()` observes `.NSCalendarDayChanged` → `refreshTriggersToday()`.)_
   `AppState.swift:27` + `refreshTriggersToday()` only called at init/on-fire/menu-appear. The "N reminders today" count goes stale across midnight for a long-idle agent (doc comment overstates "resets at the date rollover").
   **Fix:** Observe `.NSCalendarDayChanged` (or a timer to next `startOfDay`) → `refreshTriggersToday()`.
 
-- [ ] **CI "no-drift" check is fragile against XcodeGen/SwiftLint version variance.**
+- [~] **CI "no-drift" check is fragile against XcodeGen/SwiftLint version variance.** _(Partial, WP8 — SwiftLint pinned to `0.57.0` via the portable release; **XcodeGen still unpinned** (`brew install xcodegen`) in `ci.yml` and `scripts/bootstrap.sh`, so pbxproj drift remains possible.)_
   `.github/workflows/ci.yml:33-46,49` installs unpinned `xcodegen`/`swiftlint`, then fails on any `git diff` of the committed `Shoo.xcodeproj` (`objectVersion = 77`). A Homebrew bump changes pbxproj formatting → spurious red unrelated to `project.yml`. Same risk: an unpinned SwiftLint rule change turns green→red.
   **Fix:** Pin exact XcodeGen + SwiftLint versions in CI and `scripts/bootstrap.sh`; or stop committing `.xcodeproj` (the `.gitignore:20` toggle exists) and generate fresh in CI, dropping the drift check.
 

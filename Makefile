@@ -5,7 +5,7 @@ DEST    := platform=macOS
 NOSIGN  := CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
 RESULTS := TestResults.xcresult
 
-.PHONY: bootstrap generate build test lint format coverage ci hooks clean help
+.PHONY: bootstrap generate build test lint format coverage ci hooks package clean help
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -36,6 +36,9 @@ coverage: ## Print coverage from the last test run
 
 hooks: ## Install opt-in git pre-commit hook
 	bash scripts/install-git-hooks.sh
+
+package: ## Build + ad-hoc sign + zip a distributable Shoo.app
+	bash scripts/package.sh
 
 ci: generate lint build test coverage ## Full local CI mirror
 
