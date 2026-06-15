@@ -55,25 +55,27 @@ struct PrivacyPolicyView: View {
     /// Mirrors `docs/PRIVACY.md`. Plain prose (no markdown bullets) so it renders cleanly here.
     private static let sections: [Section] = [
         Section(heading: title, paragraphs: [
-            "Shoo is designed to be private by default.",
+            "Shoo is designed to be private by default."
         ]),
         Section(heading: "What Shoo does", paragraphs: [
             "Accesses the webcam only while watching is enabled.",
             "Processes each frame entirely on-device using Apple's Vision framework.",
-            "Uses the result (face box + hand landmarks) solely to decide whether to show an on-screen reminder.",
+            "Uses the result (face box + hand landmarks) solely to decide whether to show an on-screen reminder."
         ]),
         Section(heading: "What Shoo does NOT do", paragraphs: [
             "It does not record video or save still images.",
             "It does not upload, stream, or transmit any imagery or derived data anywhere.",
             "It does not include analytics, tracking, or third-party SDKs.",
-            "It does not persist anything beyond your local preferences (sensitivity, cooldown, launch-at-login) in UserDefaults.",
+            "It does not persist anything beyond your local preferences "
+                + "(sensitivity, cooldown, launch-at-login) in UserDefaults."
         ]),
         Section(heading: "Permissions", paragraphs: [
-            "Camera: required to observe hand-to-face gestures. macOS prompts on first use.",
+            "Camera: required to observe hand-to-face gestures. macOS prompts on first use."
         ]),
         Section(heading: "Sandbox", paragraphs: [
-            "The app runs in the macOS App Sandbox with only the camera entitlement. No network, file, or other device entitlements are requested.",
-        ]),
+            "The app runs in the macOS App Sandbox with only the camera entitlement. "
+                + "No network, file, or other device entitlements are requested."
+        ])
     ]
 }
 

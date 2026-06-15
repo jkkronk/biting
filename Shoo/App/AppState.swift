@@ -148,7 +148,7 @@ final class AppState: ObservableObject {
     }
 
     func toggleWatching() {
-        isWatching ? stopWatching() : startWatching()
+        if isWatching { stopWatching() } else { startWatching() }
     }
 
     // MARK: - Windows

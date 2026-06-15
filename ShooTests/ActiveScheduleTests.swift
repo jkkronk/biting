@@ -26,41 +26,53 @@ final class ActiveScheduleTests: XCTestCase {
     func testNormalWindowInside() {
         // 2026-06-03 is a Wednesday. 09:00–17:00.
         let schedule = ActiveSchedule(enabled: true, weekdays: .all, startMinutes: 540, endMinutes: 1020)
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
     }
 
     func testNormalWindowOutside() {
         let schedule = ActiveSchedule(enabled: true, weekdays: .all, startMinutes: 540, endMinutes: 1020)
-        XCTAssertFalse(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 8, minute: 0), calendar: calendar))
-        XCTAssertFalse(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 17, minute: 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 8, minute: 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 17, minute: 0), calendar: calendar))
     }
 
     func testBoundaryMinutes() {
         let schedule = ActiveSchedule(enabled: true, weekdays: .all, startMinutes: 540, endMinutes: 1020)
         // Start is inclusive, end is exclusive.
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 9, minute: 0), calendar: calendar))
-        XCTAssertFalse(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 17, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 9, minute: 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 17, minute: 0), calendar: calendar))
     }
 
     func testOvernightWrap() {
         // 22:00 → 06:00.
         let schedule = ActiveSchedule(enabled: true, weekdays: .all, startMinutes: 1320, endMinutes: 360)
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 23, minute: 0), calendar: calendar))
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 2, minute: 0), calendar: calendar))
-        XCTAssertFalse(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 23, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 2, minute: 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
     }
 
     func testAllDayWhenStartEqualsEnd() {
         let schedule = ActiveSchedule(enabled: true, weekdays: .all, startMinutes: 0, endMinutes: 0)
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 0, minute: 0), calendar: calendar))
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 23, minute: 59), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 0, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 23, minute: 59), calendar: calendar))
     }
 
     func testWeekdayExclusion() {
         // Only weekdays (Mon–Fri); 2026-06-06 is a Saturday, 2026-06-03 a Wednesday.
         let schedule = ActiveSchedule(enabled: true, weekdays: .weekdays, startMinutes: 0, endMinutes: 0)
-        XCTAssertTrue(schedule.isActive(at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
-        XCTAssertFalse(schedule.isActive(at: date(year: 2026, month: 6, day: 6, hour: 12, minute: 0), calendar: calendar))
+        XCTAssertTrue(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 3, hour: 12, minute: 0), calendar: calendar))
+        XCTAssertFalse(schedule.isActive(
+            at: date(year: 2026, month: 6, day: 6, hour: 12, minute: 0), calendar: calendar))
     }
 
     func testWeekdaySetContainsCalendarWeekday() {

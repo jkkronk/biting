@@ -1,13 +1,13 @@
 import CoreGraphics
 import Foundation
 
-/// Pure value types that flow through the detection engine.
-///
-/// None of these import Vision or AVFoundation — they are the testable spine of the
-/// detector. `VisionFrameAnalyzer` is responsible for translating Vision observations
-/// into these neutral shapes; everything downstream (`FaceGeometry`, `ProximityAnalyzer`,
-/// `GestureDetector`) operates purely on them. All coordinates are in Vision's
-/// **image-normalized** space (origin bottom-left, 0…1 on both axes).
+// Pure value types that flow through the detection engine.
+//
+// None of these import Vision or AVFoundation — they are the testable spine of the
+// detector. `VisionFrameAnalyzer` is responsible for translating Vision observations
+// into these neutral shapes; everything downstream (`FaceGeometry`, `ProximityAnalyzer`,
+// `GestureDetector`) operates purely on them. All coordinates are in Vision's
+// **image-normalized** space (origin bottom-left, 0…1 on both axes).
 
 // MARK: - DetectionResult
 
@@ -57,12 +57,6 @@ struct HandPoint: Codable, Equatable {
     var confidence: Float
     /// Triggering weight: fingertips 1.0, secondary DIP joints 0.4, wrist 0.
     var weight: Double
-
-    init(location: CGPoint, confidence: Float, weight: Double) {
-        self.location = location
-        self.confidence = confidence
-        self.weight = weight
-    }
 }
 
 /// The fingertip-centric view of one detected hand.

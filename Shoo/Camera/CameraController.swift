@@ -195,7 +195,7 @@ final class CameraController: NSObject, FrameSource {
         // per-frame conversion.
         videoOutput.alwaysDiscardsLateVideoFrames = true
         videoOutput.videoSettings = [
-            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
         ]
         if session.canAddOutput(videoOutput) {
             videoOutput.setSampleBufferDelegate(self, queue: sessionQueue)
@@ -253,7 +253,8 @@ final class CameraController: NSObject, FrameSource {
             device.activeVideoMinFrameDuration = capped.duration
             device.activeVideoMaxFrameDuration = capped.duration
             device.unlockForConfiguration()
-            AppLogger.camera.info("Capped capture to \(capped.fps, privacy: .public) fps (requested \(self.targetFPS, privacy: .public))")
+            let detail = "Capped capture to \(capped.fps) fps (requested \(self.targetFPS))"
+            AppLogger.camera.info("\(detail, privacy: .public)")
         } catch {
             AppLogger.camera.error("Failed to cap frame rate: \(error.localizedDescription, privacy: .public)")
         }
@@ -367,7 +368,8 @@ final class CameraController: NSObject, FrameSource {
 
         restartAttempts += 1
         let backoff = min(pow(2.0, Double(restartAttempts - 1)) * 0.5, 4.0)  // 0.5, 1, 2, 4
-        AppLogger.camera.notice("Auto-restart attempt \(self.restartAttempts, privacy: .public) in \(backoff, privacy: .public)s")
+        let detail = "Auto-restart attempt \(self.restartAttempts) in \(backoff)s"
+        AppLogger.camera.notice("\(detail, privacy: .public)")
 
         let generation = restartGeneration
         sessionQueue.asyncAfter(deadline: .now() + backoff) { [weak self] in

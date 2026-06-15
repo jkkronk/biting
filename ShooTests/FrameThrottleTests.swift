@@ -23,8 +23,8 @@ final class FrameThrottleTests: XCTestCase {
         let throttle = FrameThrottle(targetFPS: 12)
         var accepted = 0
         // Simulate 60 fps delivery over 1 second.
-        for i in 0..<60 {
-            if throttle.shouldProcess(now: Double(i) / 60.0) { accepted += 1 }
+        for i in 0..<60 where throttle.shouldProcess(now: Double(i) / 60.0) {
+            accepted += 1
         }
         XCTAssertLessThanOrEqual(accepted, 13)  // ≤ 12 fps (+1 for the boundary frame)
         XCTAssertGreaterThanOrEqual(accepted, 11)

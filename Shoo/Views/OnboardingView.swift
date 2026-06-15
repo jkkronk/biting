@@ -42,7 +42,8 @@ struct OnboardingView: View {
             stepBody(
                 symbol: "hand.raised.fill",
                 title: "Welcome to Shoo",
-                message: "Shoo gently reminds you when you bring your hands to your face — to help you stop nail-biting and other nervous habits."
+                message: "Shoo gently reminds you when you bring your hands to your face — "
+                    + "to help you stop nail-biting and other nervous habits."
             )
         case .privacy:
             VStack(spacing: 16) {
