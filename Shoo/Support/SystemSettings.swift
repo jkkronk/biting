@@ -14,7 +14,7 @@ enum SystemSettings {
             "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Camera",
             // Legacy.
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Camera",
-            "x-apple.systempreferences:Privacy_Camera",
+            "x-apple.systempreferences:Privacy_Camera"
         ]
         for string in candidates {
             if let url = URL(string: string), NSWorkspace.shared.open(url) {

@@ -117,7 +117,7 @@ final class AlertPresenter: AlertPresenting {
             notification: .announcementRequested,
             userInfo: [
                 .announcement: "Stop. Hands away from your face.",
-                .priority: NSAccessibilityPriorityLevel.high.rawValue,
+                .priority: NSAccessibilityPriorityLevel.high.rawValue
             ]
         )
     }

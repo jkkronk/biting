@@ -48,7 +48,8 @@ final class FrameRateCapTests: XCTestCase {
 
     func testInvalidRangesAreIgnored() {
         // Zero/negative and inverted ranges are dropped; only (15,30) remains.
-        let result = FrameRateCap.clamp(desiredFPS: 12, into: [(min: 0, max: 0), (min: 30, max: 15), (min: 15, max: 30)])
+        let result = FrameRateCap.clamp(
+            desiredFPS: 12, into: [(min: 0, max: 0), (min: 30, max: 15), (min: 15, max: 30)])
         XCTAssertEqual(result?.fps, 15)
     }
 }

@@ -23,8 +23,19 @@ line_length:
   ignores_comments: true
 
 identifier_name:
-  min_length: 2
+  # Short names (a, b, d, p, s, t…) are idiomatic in the geometry/detection math
+  # and in test fixtures; the 40-char ceiling still guards against the real smell.
+  min_length: 1
   excluded:
     - id
     - x
     - y
+
+# Two central coordinator classes (AppState, CameraController) legitimately run long;
+# raise the ceilings to give headroom rather than split them under launch pressure.
+type_body_length:
+  warning: 450
+  error: 600
+file_length:
+  warning: 700
+  error: 1200
