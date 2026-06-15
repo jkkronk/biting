@@ -4,8 +4,6 @@ A macOS menu-bar app that watches you through the webcam and gently tells you to
 
 All image processing happens **on-device** using Apple's Vision framework. No video, frames, or data ever leave your Mac.
 
-> Status: **working**. The full pipeline is implemented and wired end-to-end (camera → detection → alert → overlay), with a unit-tested pure-logic core. Remaining work (detection tuning, App Store signing/submission) is tracked in `plans/` and `docs/AUDIT.md`.
-
 ## How it works
 
 ```
@@ -68,8 +66,6 @@ docs/            Architecture & privacy notes
 - [x] Real hand-to-face detection (face landmarks + hand pose, mouth/nose regions)
 - [x] False-positive mitigation (chin-rest penalty, temporal hysteresis)
 - [x] App icon & menu-bar glyph
-- [ ] On-device threshold tuning from real-world use
-- [ ] Code signing, notarization, App Store submission (see `plans/05-appstore-distribution.md`)
 
 Open issues and improvements are tracked in [`docs/AUDIT.md`](docs/AUDIT.md).
 
