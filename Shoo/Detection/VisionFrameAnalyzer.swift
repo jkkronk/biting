@@ -41,10 +41,10 @@ final class VisionFrameAnalyzer: FrameAnalyzing {
     /// Primary fingertips (weight 1.0) and secondary DIP joints (weight 0.4).
     private static let primaryTips: [(VNHumanHandPoseObservation.JointName, Double)] = [
         (.thumbTip, 1.0), (.indexTip, 1.0), (.middleTip, 1.0),
-        (.ringTip, 1.0), (.littleTip, 1.0),
+        (.ringTip, 1.0), (.littleTip, 1.0)
     ]
     private static let secondaryJoints: [(VNHumanHandPoseObservation.JointName, Double)] = [
-        (.indexDIP, 0.4), (.middleDIP, 0.4),
+        (.indexDIP, 0.4), (.middleDIP, 0.4)
     ]
 
     func analyze(_ pixelBuffer: CVPixelBuffer,

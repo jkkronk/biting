@@ -53,6 +53,8 @@ final class AlertPresenterTests: XCTestCase {
         super.tearDown()
     }
 
+    // Test factory returning the SUT and its four spies.
+    // swiftlint:disable:next large_tuple
     private func make() -> (AlertPresenter, AppSettings, SpyOverlay, SpySound, SpyNotifications) {
         let settings = AppSettings(defaults: defaults)
         let overlay = SpyOverlay()

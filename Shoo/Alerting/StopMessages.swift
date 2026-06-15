@@ -53,7 +53,7 @@ enum StopMessages {
         "Hand-to-face ratio too high.",
         "Be strong. Hands down.",
         "Not on my watch.",
-        "Give the face a day off.",
+        "Give the face a day off."
     ]
 
     /// Bold "Gotcha!"-style headlines shown above the snapshot. One is picked at random
@@ -68,7 +68,7 @@ enum StopMessages {
         "Nope!",
         "Gotcha again!",
         "There it is!",
-        "Seen it!",
+        "Seen it!"
     ]
 
     /// A random message, with a safe fallback if the pool is ever empty.

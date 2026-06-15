@@ -87,7 +87,9 @@ struct OverlayView: View {
                 .clipShape(shape)
                 .overlay(
                     shape.strokeBorder(
-                        isHighContrast ? AnyShapeStyle(Color(nsColor: .separatorColor)) : AnyShapeStyle(.white.opacity(0.15)),
+                        isHighContrast
+                            ? AnyShapeStyle(Color(nsColor: .separatorColor))
+                            : AnyShapeStyle(.white.opacity(0.15)),
                         lineWidth: isHighContrast ? 2 : 1
                     )
                 )

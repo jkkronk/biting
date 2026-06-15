@@ -45,7 +45,7 @@ final class AppSettings: ObservableObject {
             snapshotInReminderEnabled,
             startWatchingOnLaunch, watchedGestures,
             scheduleEnabled, activeWeekdays, activeStartMinutes, activeEndMinutes,
-            hasOnboarded,
+            hasOnboarded
         ]
     }
 
@@ -74,7 +74,7 @@ final class AppSettings: ObservableObject {
         Keys.activeWeekdays: WeekdaySet.all.rawValue,
         Keys.activeStartMinutes: 540,   // 09:00
         Keys.activeEndMinutes: 1020,    // 17:00
-        Keys.hasOnboarded: false,
+        Keys.hasOnboarded: false
     ]
 
     /// 0…1, mapped to a ``DetectorConfig`` via `DetectorConfig.from(sensitivity:)`
